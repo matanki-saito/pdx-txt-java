@@ -28,3 +28,5 @@
 
 ### other
 /data
+# Ignore Gradle build output directory
+build
