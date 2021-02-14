@@ -7,7 +7,6 @@
  */
 
 plugins {
-    // Apply the java-library plugin for API and implementation separation.
     id 'java-library'
 }
 
@@ -16,21 +15,61 @@ repositories {
     jcenter()
 }
 
+version '0.1.0-SNAPSHOT'
+sourceCompatibility = JavaVersion.VERSION_15
+
 dependencies {
-    // Use JUnit Jupiter API for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
+    // https://blog1.mammb.com/entry/2017/08/01/121048
 
-    // Use JUnit Jupiter Engine for testing.
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    // アノテーションプリプロセッサ用
+    annotationProcessor 'org.projectlombok:lombok:1.18.16'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.16'
 
-    // This dependency is exported to consumers, that is to say found on their compile classpath.
-    api 'org.apache.commons:commons-math3:3.6.1'
+    // 外部(このライブラリの利用者)に公開する依存関係
+    // api
 
-    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
+    // 外部(このライブラリの利用者)に公開せず、ライブラリ内の実装でのみ使う依存関係
     implementation 'com.google.guava:guava:29.0-jre'
+    implementation 'org.antlr:antlr4-runtime:4.9.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.1'
+    implementation 'org.apache.commons:commons-lang3:3.11'
+
+    // コンパイル時にのみ必要となる依存関係(実行時にリークしてはならないもの)
+    compileOnly 'org.projectlombok:lombok:1.18.16'
+
+    // コンパイル時には不要だが、実行時に必要な依存関係
+    // runtimeOnly
+
+    // テストをコンパイルするために使用される依存関係
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
+    testImplementation 'org.assertj:assertj-core:3.19.0'
+
+    // テストコンパイル時にのみ必要となる依存関係(実行時にリークしてはならないもの)
+    testCompileOnly 'org.projectlombok:lombok:1.18.16'
+
+    // テストランタイムでのみ必要となる依存関係
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['--enable-preview']
 }
 
 tasks.named('test') {
     // Use junit platform for unit tests.
     useJUnitPlatform()
+    jvmArgs = ['--enable-preview']
+}
+
+tasks.named('jar') {
+    manifest {
+        attributes(
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version)
+    }
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
 }
