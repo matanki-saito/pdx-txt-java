@@ -1,9 +1,12 @@
 grammar Pdx;
+@header {
+    package com.github.matanki_saito.rico.antlr;
+}
 
 // lexer
 COMMENT: '#' ~('\n'|'\r')* ('\r\n' | '\r' | '\n' | EOF) -> skip;
 
-// "ABC" "" "\n" "ABC\nCBA" "猫と犬"
+// "ABC" "" "\n" "ABC\nCBA" "cat and dog"
 WRAP_STRING: '"' CHAR* '"';
 
 // space is ignored
@@ -48,7 +51,7 @@ HTPHEN: '-';
 DOT: '.';
 AT_MARK: '@';
 ALPHABETS: [a-zA-Z];
-EUROPEAN_LANG_CHARS: [À-ÿœšŸŠŒŽž];
+EUROPEAN_LANG_CHARS: [\u{C0}-\u{FF}\u{153}\u{161}\u{178}\u{160}\u{152}\u{17D}\u{17E}]; // À-ÿœšŸŠŒŽž
 
 CHAR: ~[\u{22}\u{5C}\u{0}-\u{1F}]
     | '\\' [bfnrt];
@@ -78,14 +81,13 @@ value
 : element
 | array;
 
-// キーには数字を使用できる
-// 例）1000.0
-// キーには日付を使用できる
-// 例）1024.20.1
-// キーには特定の文字列を使用できる
-// 例）abc.1
-// 例）bbb-6-czAÿ.10a_1''5
-// 例）あいう NG
+// Key allows numbers
+// example) 1000.0
+// Key allows datetime
+// example) 1024.20.1
+// Key allows special characters
+// example) abc.1
+// example) bbb-6-czAÿ.10a_1''5
 key
 : (NUMBER|DATE_TIME|KEY_LEVEL_STRING);
 
