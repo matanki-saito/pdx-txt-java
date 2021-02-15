@@ -9,6 +9,7 @@
 plugins {
     id 'java-library'
     id 'antlr'
+    id 'maven-publish'
 }
 
 repositories {
@@ -16,10 +17,14 @@ repositories {
     jcenter()
 }
 
-version '0.1.0-SNAPSHOT'
+version '0.0.1-SNAPSHOT'
+
 sourceCompatibility = JavaVersion.VERSION_15
+targetCompatibility = JavaVersion.VERSION_15
 
 dependencies {
+    antlr 'org.antlr:antlr4:4.9.1'
+
     // https://blog1.mammb.com/entry/2017/08/01/121048
 
     // アノテーションプリプロセッサ用
@@ -39,7 +44,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.16'
 
     // コンパイル時には不要だが、実行時に必要な依存関係
-    // runtimeOnly
+    runtimeOnly 'org.antlr:antlr4-runtime:4.9.1'
 
     // テストをコンパイルするために使用される依存関係
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
@@ -52,17 +57,12 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
-tasks.withType(JavaCompile) {
-    options.compilerArgs += ['--enable-preview']
-}
-
-tasks.named('test') {
+test {
     // Use junit platform for unit tests.
     useJUnitPlatform()
-    jvmArgs = ['--enable-preview']
 }
 
-tasks.named('jar') {
+jar {
     manifest {
         attributes(
                 'Implementation-Title': project.name,
@@ -73,4 +73,43 @@ tasks.named('jar') {
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+javadoc {
+    exclude "com/github/matanki_saito/rico/antlr/**"
+    options.encoding = 'UTF-8'
+    options.addBooleanOption('-enable-preview', true)
+    options.addStringOption('-release', '15')
+}
+
+compileJava {
+    options.compilerArgs += ['--enable-preview']
+    options.encoding = 'UTF-8'
+}
+
+compileTestJava {
+    options.compilerArgs += ['--enable-preview']
+    options.encoding = 'UTF-8'
+}
+
+publishing {
+    // https://docs.github.com/ja/packages/guides/configuring-gradle-for-use-with-github-packages
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/matanki-saito/pdx-txt-java")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+            }
+        }
+
+        publications {
+            gpr(MavenPublication) {
+                groupId = 'com.github.matanki_saito'
+                artifactId = 'rico'
+                from(components.java)
+            }
+        }
+    }
 }
