@@ -23,6 +23,7 @@ import com.github.matanki_saito.rico.antlr.PdxParser.ElementContext;
 import com.github.matanki_saito.rico.antlr.PdxParser.KeyValueContext;
 import com.github.matanki_saito.rico.antlr.PdxParser.PrimitiveContext;
 import com.github.matanki_saito.rico.antlr.PdxParser.RootContext;
+import com.github.matanki_saito.rico.exception.ThrowingErrorListener;
 
 import lombok.experimental.UtilityClass;
 
@@ -48,8 +49,12 @@ public class PdxTxtTool {
     public static String convertJson(Path txtFile, boolean pretty) throws IOException {
         var charStream = CharStreams.fromPath(txtFile);
         var lexer = new PdxLexer(charStream);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(ThrowingErrorListener.INSTANCE);
         var tokens = new CommonTokenStream(lexer);
         var parser = new PdxParser(tokens);
+        parser.removeErrorListeners();
+        parser.addErrorListener(ThrowingErrorListener.INSTANCE);
 
         return toJson(parser.root(), pretty);
     }
@@ -67,6 +72,16 @@ public class PdxTxtTool {
         Object data = objectMapper.readValue(jsonFile.toFile(), Object.class);
 
         return decompile(data, 0);
+    }
+
+    public static String viewAstTree(Path txtFile) throws IOException {
+        var charStream = CharStreams.fromPath(txtFile);
+        var lexer = new PdxLexer(charStream);
+        var tokens = new CommonTokenStream(lexer);
+        var parser = new PdxParser(tokens);
+        ParseTree tree = parser.root();
+
+        return tree.toStringTree(parser);
     }
 
     private static String toJson(RootContext tree, boolean prettyPrint) throws JsonProcessingException {
