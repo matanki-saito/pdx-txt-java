@@ -18,8 +18,6 @@ repositories {
     jcenter()
 }
 
-version '0.0.1'
-
 sourceCompatibility = JavaVersion.VERSION_15
 targetCompatibility = JavaVersion.VERSION_15
 
@@ -65,9 +63,10 @@ test {
 }
 
 jar {
+    archiveBaseName.set(rootProject.name)
     manifest {
         attributes(
-                'Implementation-Title': project.name,
+                'Implementation-Title': rootProject.name,
                 'Implementation-Version': project.version)
     }
 }
@@ -109,7 +108,7 @@ publishing {
         publications {
             gpr(MavenPublication) {
                 groupId = 'com.github.matanki_saito'
-                artifactId = 'rico'
+                artifactId = rootProject.name
                 from(components.java)
             }
         }
