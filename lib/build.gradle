@@ -121,5 +121,9 @@ release {
     preTagCommitMessage = '[skip ci] [Gradle Release Plugin] - pre tag commit: '
     tagCommitMessage = '[skip ci] [Gradle Release Plugin] - creating tag: '
     newVersionCommitMessage = '[skip ci] [Gradle Release Plugin] - new version commit: '
+
+    git {
+        requireBranch = 'main'
+    }
 }
 
