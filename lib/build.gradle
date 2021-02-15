@@ -10,6 +10,7 @@ plugins {
     id 'java-library'
     id 'antlr'
     id 'maven-publish'
+    id 'net.researchgate.release' version '2.8.1'
 }
 
 repositories {
@@ -100,8 +101,8 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/matanki-saito/pdx-txt-java")
             credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USER_NAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
             }
         }
 
@@ -114,3 +115,11 @@ publishing {
         }
     }
 }
+
+release {
+    // [skip ci]をコメントに入れないと、無限ループする
+    preTagCommitMessage = '[skip ci] [Gradle Release Plugin] - pre tag commit: '
+    tagCommitMessage = '[skip ci] [Gradle Release Plugin] - creating tag: '
+    newVersionCommitMessage = '[skip ci] [Gradle Release Plugin] - new version commit: '
+}
+

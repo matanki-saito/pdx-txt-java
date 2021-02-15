@@ -15,5 +15,10 @@ jobs:
           java-version: 15
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: 
+      - name: test
         run: ./gradlew test
+      - name: publish package
+        run: ./gradlew publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USER_NAME: matanki_saito
