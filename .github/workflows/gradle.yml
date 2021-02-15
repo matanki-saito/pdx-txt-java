@@ -18,11 +18,11 @@ jobs:
         run: chmod +x gradlew
       - name: test
         run: ./gradlew test
-      - name: publish package
-        run: ./gradlew publish
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_USER_NAME: matanki_saito
+        #      - name: publish package
+        #        run: ./gradlew publish
+        #env:
+        #  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #  GITHUB_USER_NAME: matanki_saito
       - name: release
         run: |
           git config --local user.email "matanki.saito@gmail.com"
