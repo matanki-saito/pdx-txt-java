@@ -60,6 +60,7 @@ dependencies {
 test {
     // Use junit platform for unit tests.
     useJUnitPlatform()
+    jvmArgs = ['--enable-preview']
 }
 
 jar {
