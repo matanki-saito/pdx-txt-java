@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: "! contains(github.event.head_commit.message, '[skip ci]')"
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 15
@@ -22,3 +23,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_USER_NAME: matanki_saito
+      - name: release
+        run: |
+          git config --local user.email "matanki.saito@gmail.com"
+          git config --local user.name "matanki.saito"
+          ./gradlew release -Prelease.useAutomaticVersion=true
