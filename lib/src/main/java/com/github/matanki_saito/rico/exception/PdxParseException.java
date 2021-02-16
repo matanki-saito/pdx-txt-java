@@ -4,8 +4,11 @@ import java.util.List;
 
 import com.github.matanki_saito.rico.exception.ThrowingErrorListener.Data;
 
+import lombok.Getter;
+
 public class PdxParseException extends ArgumentException {
-    List<Data> exceptions;
+    @Getter
+    private List<Data> exceptions;
 
     public PdxParseException(String message) {
         super(message);

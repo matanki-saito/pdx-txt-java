@@ -52,7 +52,7 @@ public class PdxTxtTool {
      * @throws SystemException other system exception
      * @throws ArgumentException argument error
      */
-    public static String convertJson(Path txtFile, boolean pretty)
+    public static String convertTxtToJson(Path txtFile, boolean pretty)
             throws SystemException, ArgumentException {
 
         CharStream charStream;
@@ -65,6 +65,12 @@ public class PdxTxtTool {
         return innerConvertJson(charStream, pretty);
     }
 
+    public static String convertTxtToJson(String txt, boolean pretty)
+            throws ArgumentException, SystemException {
+        CharStream charStream = CharStreams.fromString(txt);
+        return innerConvertJson(charStream, pretty);
+    }
+
     /**
      * Json to ParadoxTxtFormat
      *
@@ -74,9 +80,27 @@ public class PdxTxtTool {
      *
      * @throws ArgumentException argument error
      */
-    public static String convertTxt(Path jsonFile) throws ArgumentException {
+    public static String convertJsonToTxt(Path jsonFile) throws ArgumentException {
         try {
             Object data = objectMapper.readValue(jsonFile.toFile(), Object.class);
+            return decompile(data, 0);
+        } catch (IOException e) {
+            throw new ArgumentException("json error", e);
+        }
+    }
+
+    /**
+     * Json to ParadoxTxtFormat
+     *
+     * @param jsonString json string
+     *
+     * @return ParadoxTxt
+     *
+     * @throws ArgumentException argument error
+     */
+    public static String convertJsonToTxt(String jsonString) throws ArgumentException {
+        try {
+            Object data = objectMapper.readValue(jsonString, Object.class);
             return decompile(data, 0);
         } catch (IOException e) {
             throw new ArgumentException("json error", e);
@@ -188,15 +212,13 @@ public class PdxTxtTool {
         parser.removeErrorListeners();
         parser.addErrorListener(listener);
 
+        var tree = parser.root();
+
         if (listener.getExceptions().isEmpty()) {
-            return toJson(parser.root(), pretty);
+            return toJson(tree, pretty);
         } else {
             throw new PdxParseException("", listener.getExceptions());
         }
     }
 
-    public static String convertJson(String txt, boolean pretty) throws ArgumentException, SystemException {
-        CharStream charStream = CharStreams.fromString(txt);
-        return innerConvertJson(charStream, pretty);
-    }
 }

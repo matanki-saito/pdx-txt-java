@@ -23,5 +23,5 @@ public class ThrowingErrorListener extends BaseErrorListener {
         exceptions.add(new Data(line, charPositionInLine, msg));
     }
 
-    record Data(int line, int charPositionInLine, String message) {}
+    public record Data(int line, int charPositionInLine, String message) {}
 }
