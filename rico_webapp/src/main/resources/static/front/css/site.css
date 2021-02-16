@@ -1,0 +1,21 @@
+
+.contents {
+  margin-top: 20px;
+}
+
+h1 {
+  margin-top: 10px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.tool {
+  margin-top: 2%;
+}
+
+.alert {
+  margin-top: 2%;
+}

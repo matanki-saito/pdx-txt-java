@@ -1,0 +1,59 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"
+>
+<head>
+  <meta charset="utf-8">
+
+  <!-- vue.js -->
+  <script src="https://unpkg.com/vue@latest/dist/vue.min.js"></script>
+  <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+  <!-- bootstrap vue -->
+  <link rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
+  <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+  <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+
+  <!-- clipboard -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.6.0/clipboard.min.js"></script>
+
+  <!-- http get/post library -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <!-- reCaptcha v3 -->
+  <script th:src="'https://www.google.com/recaptcha/api.js?render=' + ${reCaptchaV3SiteKey}"></script>
+  <script th:inline="javascript">
+      /*<![CDATA[*/
+      const RE_CAPTCHA_V3_SITE_KEY = /*[[${reCaptchaV3SiteKey}]]*/ "dummy";
+      /*]]>*/
+  </script>
+
+  <!-- main -->
+  <link rel="stylesheet" href="/front/css/site.css">
+  <script src="/front/js/main.js"></script>
+
+</head>
+<body>
+<div id="root">
+  <!-- 画面中央に寄せる -->
+  <div class="container">
+    <!-- main -->
+    <router-view></router-view>
+  </div>
+</div>
+
+<!-- main -->
+<script>
+    const routes = [
+        {path: '/decompile', component: pdxTxtWebFront, name: 'pdx-txt-web-front'}
+    ];
+
+    const router = new VueRouter({
+        routes
+    });
+
+    const root = new Vue({
+        router
+    }).$mount('#root');
+
+</script>
