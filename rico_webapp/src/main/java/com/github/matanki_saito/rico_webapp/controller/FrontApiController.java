@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.github.matanki_saito.rico.PdxTxtTool;
 import com.github.matanki_saito.rico.exception.ArgumentException;
 import com.github.matanki_saito.rico.exception.SystemException;
-import com.github.matanki_saito.rico_webapp.model.ConvertPdxTxtForm;
-import com.github.matanki_saito.rico_webapp.model.ConvertPdxTxtFormResponse;
+import com.github.matanki_saito.rico_webapp.model.ConvertJsonToTxtForm;
+import com.github.matanki_saito.rico_webapp.model.ConvertJsonToTxtFormResponse;
+import com.github.matanki_saito.rico_webapp.model.ConvertTxtToJsonForm;
+import com.github.matanki_saito.rico_webapp.model.ConvertTxtToJsonFormResponse;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,13 +21,23 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Validated
 public class FrontApiController extends ControllerBase {
-    @PostMapping("/convert")
-    public ConvertPdxTxtFormResponse convertPdxTxtForm(@RequestBody @Validated ConvertPdxTxtForm form)
+    @PostMapping("/convertTxtToJson")
+    public ConvertTxtToJsonFormResponse convertTxtToJson(@RequestBody @Validated ConvertTxtToJsonForm form)
             throws SystemException, ArgumentException {
-        var json = PdxTxtTool.convertJson(form.getTxt(), true);
+        var json = PdxTxtTool.convertTxtToJson(form.getTxt(), true);
 
-        return ConvertPdxTxtFormResponse.builder()
-                                        .json(json)
-                                        .build();
+        return ConvertTxtToJsonFormResponse.builder()
+                                           .json(json)
+                                           .build();
+    }
+
+    @PostMapping("/convertJsonToTxt")
+    public ConvertJsonToTxtFormResponse convertJsonToTxt(@RequestBody @Validated ConvertJsonToTxtForm form)
+            throws ArgumentException {
+        var txt = PdxTxtTool.convertJsonToTxt(form.getJson());
+
+        return ConvertJsonToTxtFormResponse.builder()
+                                           .txt(txt)
+                                           .build();
     }
 }
