@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -23,6 +24,10 @@ import com.github.matanki_saito.rico.antlr.PdxParser.ElementContext;
 import com.github.matanki_saito.rico.antlr.PdxParser.KeyValueContext;
 import com.github.matanki_saito.rico.antlr.PdxParser.PrimitiveContext;
 import com.github.matanki_saito.rico.antlr.PdxParser.RootContext;
+import com.github.matanki_saito.rico.exception.ArgumentException;
+import com.github.matanki_saito.rico.exception.MachineException;
+import com.github.matanki_saito.rico.exception.PdxParseException;
+import com.github.matanki_saito.rico.exception.SystemException;
 import com.github.matanki_saito.rico.exception.ThrowingErrorListener;
 
 import lombok.experimental.UtilityClass;
@@ -44,19 +49,20 @@ public class PdxTxtTool {
      *
      * @return Json
      *
-     * @throws IOException Json export exception
+     * @throws SystemException other system exception
+     * @throws ArgumentException argument error
      */
-    public static String convertJson(Path txtFile, boolean pretty) throws IOException {
-        var charStream = CharStreams.fromPath(txtFile);
-        var lexer = new PdxLexer(charStream);
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(ThrowingErrorListener.INSTANCE);
-        var tokens = new CommonTokenStream(lexer);
-        var parser = new PdxParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(ThrowingErrorListener.INSTANCE);
+    public static String convertJson(Path txtFile, boolean pretty)
+            throws SystemException, ArgumentException {
 
-        return toJson(parser.root(), pretty);
+        CharStream charStream;
+        try {
+            charStream = CharStreams.fromPath(txtFile);
+        } catch (IOException e) {
+            throw new MachineException("IO exception", e);
+        }
+
+        return innerConvertJson(charStream, pretty);
     }
 
     /**
@@ -66,28 +72,25 @@ public class PdxTxtTool {
      *
      * @return ParadoxTxt
      *
-     * @throws IOException Json import exception
+     * @throws ArgumentException argument error
      */
-    public static String convertTxt(Path jsonFile) throws IOException {
-        Object data = objectMapper.readValue(jsonFile.toFile(), Object.class);
-
-        return decompile(data, 0);
+    public static String convertTxt(Path jsonFile) throws ArgumentException {
+        try {
+            Object data = objectMapper.readValue(jsonFile.toFile(), Object.class);
+            return decompile(data, 0);
+        } catch (IOException e) {
+            throw new ArgumentException("json error", e);
+        }
     }
 
-    public static String viewAstTree(Path txtFile) throws IOException {
-        var charStream = CharStreams.fromPath(txtFile);
-        var lexer = new PdxLexer(charStream);
-        var tokens = new CommonTokenStream(lexer);
-        var parser = new PdxParser(tokens);
-        ParseTree tree = parser.root();
-
-        return tree.toStringTree(parser);
-    }
-
-    private static String toJson(RootContext tree, boolean prettyPrint) throws JsonProcessingException {
+    private static String toJson(RootContext tree, boolean prettyPrint) throws SystemException {
         var map = compile(tree);
-        return prettyPrint ? objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(map)
-                           : objectMapper.writeValueAsString(map);
+        try {
+            return prettyPrint ? objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(map)
+                               : objectMapper.writeValueAsString(map);
+        } catch (JsonProcessingException e) {
+            throw new SystemException("json exception", e);
+        }
     }
 
     private static String decompile(Object data, int depth) {
@@ -171,5 +174,29 @@ public class PdxTxtTool {
         }
 
         return null;
+    }
+
+    private String innerConvertJson(CharStream charStream, boolean pretty)
+            throws SystemException, ArgumentException {
+        var listener = new ThrowingErrorListener();
+
+        var lexer = new PdxLexer(charStream);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(listener);
+        var tokens = new CommonTokenStream(lexer);
+        var parser = new PdxParser(tokens);
+        parser.removeErrorListeners();
+        parser.addErrorListener(listener);
+
+        if (listener.getExceptions().isEmpty()) {
+            return toJson(parser.root(), pretty);
+        } else {
+            throw new PdxParseException("", listener.getExceptions());
+        }
+    }
+
+    public static String convertJson(String txt, boolean pretty) throws ArgumentException, SystemException {
+        CharStream charStream = CharStreams.fromString(txt);
+        return innerConvertJson(charStream, pretty);
     }
 }
