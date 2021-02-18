@@ -5,12 +5,16 @@ const awaitForLoad = target => {
     });
 };
 
+const objectToMap = object =>
+    Object.entries(object).reduce((l, [k, v]) => l.set(k, v), new Map())
+
 const pdxTxtWebFront = Vue.component('pdx-txt-web-front', {
     data() {
         return {
             pdxtxt: "",
             pdxjson: "",
-            errors: []
+            errorMessage: "",
+            errors: {}
         }
     },
 
@@ -27,6 +31,20 @@ const pdxTxtWebFront = Vue.component('pdx-txt-web-front', {
     },
     computed: {},
     methods: {
+        errorReset: function () {
+            this.errorMessage = null
+            this.errors = {}
+        },
+        setError: function (error) {
+            const {
+                simpleMessage,
+                statusCode,
+                exceptionDetails
+            } = error.response.data;
+
+            this.errorMessage = statusCode + ":" + simpleMessage;
+            this.errors = objectToMap(exceptionDetails);
+        },
         convertJson: async function () {
             await grecaptcha.ready(async () => {
                 const tkn = await grecaptcha.execute(RE_CAPTCHA_V3_SITE_KEY, {action: 'homepage'});
@@ -36,15 +54,10 @@ const pdxTxtWebFront = Vue.component('pdx-txt-web-front', {
                         txt: this.pdxtxt,
                         reCaptchaToken: tkn
                     });
-
+                    this.errorReset()
                     this.pdxjson = res.data.json;
                 } catch (error) {
-                    const {
-                        message,
-                        status,
-                        errors
-                    } = error.response.data;
-                    this.errors = errors;
+                    this.setError(error)
                 }
             });
         },
@@ -57,25 +70,26 @@ const pdxTxtWebFront = Vue.component('pdx-txt-web-front', {
                         json: this.pdxjson,
                         reCaptchaToken: tkn
                     });
-
+                    this.errorReset()
                     this.pdxtxt = res.data.txt;
                 } catch (error) {
-                    const {
-                        message,
-                        status,
-                        errors
-                    } = error.response.data;
-                    this.errors = errors;
+                    this.setError(error)
                 }
             });
         }
     },
     template: `
     <div class="contents">
+      <div class="alert alert-danger" role="alert" v-if="errorMessage">
+        <h2>{{errorMessage}}</h2>
+        <ul>
+          <li v-for="[key, val] in Array.from(errors)">{{key}} : {{val}}</li>
+        </ul>
+      </div>
       <h1>Pdx txt tool</h1>
         <h2>txt</h2>
         <div>
-          <textarea class="form-control" placeholder="paradox txt 500文字まで" rows="32" v-model="pdxtxt"></textarea>
+          <textarea class="form-control" placeholder="paradox txt 500文字まで" rows="10" v-model="pdxtxt"></textarea>
         </div>
         <div class="input-group" style="width:100%">
             <div class="input-group-prepend">
@@ -86,15 +100,8 @@ const pdxTxtWebFront = Vue.component('pdx-txt-web-front', {
             </div>
         </div>
         <div>
-            <textarea class="form-control" id="exampleFormControlTextarea1" placeholder="json" rows="32" v-model="pdxjson"></textarea>
-        </div>
-
-      <div class="alert alert-danger" role="alert" v-if="errors.length">
-        <ul>
-          <li v-for="(item, index) in errors">{{item.defaultMessage}}</li>
-        </ul>
-      </div>
-      
+            <textarea class="form-control" id="exampleFormControlTextarea1" placeholder="json" rows="10" v-model="pdxjson"></textarea>
+        </div>      
     </div>
   `
 });
