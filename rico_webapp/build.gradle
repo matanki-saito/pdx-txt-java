@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'net.researchgate.release' version '2.8.1'
     id 'org.springframework.boot' version '2.4.2'
+    id 'com.palantir.docker' version '0.26.0'
 }
 
 group 'com.github.matanki_saito'
@@ -50,6 +51,18 @@ dependencies {
 
 bootRun {
     jvmArgs = ['--enable-preview']
+}
+
+task unpack(type: Copy) {
+    dependsOn bootJar
+    from(zipTree(tasks.bootJar.outputs.files.singleFile))
+    into("build/dependency")
+}
+
+docker {
+    name "gnagaoka/rico-app:" + version + "-app"
+    copySpec.from(tasks.unpack.outputs).into("dependency")
+    buildArgs(['DEPENDENCY': "dependency"])
 }
 
 test {
