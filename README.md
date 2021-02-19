@@ -8,8 +8,4 @@ Paradox interactive txt format tool | dev-name: Rico
 
 ## Usage
 
-```
-dependencies {
-    implementation 'com.github.matanki_saito:rico:0.0.1'
-}
-```
+see packages
