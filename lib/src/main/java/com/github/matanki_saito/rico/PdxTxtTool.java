@@ -96,7 +96,7 @@ public class PdxTxtTool {
      *
      * @return ParadoxTxt
      *
-     * @throws ArgumentException argument error
+     * @throws ArgumentException argument errors
      */
     public static String convertJsonToTxt(String jsonString) throws ArgumentException {
         try {
