@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - app-*.*.*
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       info:
