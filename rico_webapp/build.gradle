@@ -10,6 +10,9 @@ targetCompatibility = JavaVersion.VERSION_15
 
 repositories {
     mavenCentral()
+    maven {
+        url 'https://jitpack.io'
+    }
 }
 
 dependencies {
@@ -33,7 +36,8 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.16'
 
     // コンパイル時には不要だが、実行時に必要な依存関係
-    // runtimeOnly
+    runtimeOnly 'com.github.napstr:logback-discord-appender:1.0.0'
+    runtimeOnly 'net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.7.1'
 
     // テストをコンパイルするために使用される依存関係
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
