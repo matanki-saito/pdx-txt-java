@@ -3,6 +3,8 @@ name: publish library
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+    branches: [ main ]
 
 jobs:
   main-job:
