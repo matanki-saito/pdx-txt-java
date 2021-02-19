@@ -5,9 +5,6 @@ plugins {
     id 'com.palantir.docker' version '0.26.0'
 }
 
-group 'com.github.matanki_saito'
-version '0.1.0-SNAPSHOT'
-
 sourceCompatibility = JavaVersion.VERSION_15
 targetCompatibility = JavaVersion.VERSION_15
 
@@ -47,6 +44,11 @@ dependencies {
 
     // テストランタイムでのみ必要となる依存関係
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+bootJar {
+    archiveBaseName.set('rico-webapp-docker')
+    archiveVersion = project.version
 }
 
 bootRun {
@@ -91,6 +93,8 @@ release {
     preTagCommitMessage = '[skip ci] [Gradle Release Plugin] - pre tag commit: '
     tagCommitMessage = '[skip ci] [Gradle Release Plugin] - creating tag: '
     newVersionCommitMessage = '[skip ci] [Gradle Release Plugin] - new version commit: '
+
+    tagTemplate = 'app-${version}'
 
     git {
         requireBranch = 'main'

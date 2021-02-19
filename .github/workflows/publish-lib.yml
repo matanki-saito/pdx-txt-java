@@ -26,4 +26,3 @@ jobs:
           git config --local user.email "matanki.saito@gmail.com"
           git config --local user.name "matanki.saito"
           ./gradlew :lib:release -Prelease.useAutomaticVersion=true
-
