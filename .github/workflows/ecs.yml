@@ -25,6 +25,6 @@ jobs:
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: rico-task.json
+          task-definition: rico_webapp/rico-task.json
           container-name: rico-app
           image: docker.pkg.github.com/matanki-saito/pdx-txt-java/rico-app:0.0.6-app

@@ -1,0 +1,122 @@
+{
+  "ipcMode": null,
+  "executionRoleArn": "arn:aws:iam::508245217387:role/ecsdockerhub",
+  "containerDefinitions": [
+    {
+      "dnsSearchDomains": null,
+      "environmentFiles": null,
+      "logConfiguration": null,
+      "entryPoint": null,
+      "portMappings": [ ],
+      "command": null,
+      "linuxParameters": null,
+      "cpu": 0,
+      "environment": [ ],
+      "resourceRequirements": null,
+      "ulimits": null,
+      "repositoryCredentials": {
+        "credentialsParameter": "arn:aws:secretsmanager:ap-northeast-1:508245217387:secret:dockerhub-qo10VV"
+      },
+      "dnsServers": null,
+      "mountPoints": [ ],
+      "workingDirectory": null,
+      "secrets": null,
+      "dockerSecurityOptions": null,
+      "memory": 16,
+      "memoryReservation": null,
+      "volumesFrom": [ ],
+      "stopTimeout": null,
+      "image": "registry.hub.docker.com/gnagaoka/triela-private:latest",
+      "startTimeout": null,
+      "firelensConfiguration": null,
+      "dependsOn": null,
+      "disableNetworking": null,
+      "interactive": null,
+      "healthCheck": null,
+      "essential": false,
+      "links": null,
+      "hostname": null,
+      "extraHosts": null,
+      "pseudoTerminal": null,
+      "user": null,
+      "readonlyRootFilesystem": null,
+      "dockerLabels": null,
+      "systemControls": null,
+      "privileged": null,
+      "name": "triela-private"
+    },
+    {
+      "dnsSearchDomains": null,
+      "environmentFiles": null,
+      "logConfiguration": null,
+      "entryPoint": null,
+      "portMappings": [
+        {
+          "hostPort": 8800,
+          "protocol": "tcp",
+          "containerPort": 80
+        }
+      ],
+      "command": null,
+      "linuxParameters": null,
+      "cpu": 0,
+      "environment": [
+        {
+          "name": "VIRTUAL_HOST",
+          "value": "triela.cf"
+        }
+      ],
+      "resourceRequirements": null,
+      "ulimits": null,
+      "repositoryCredentials": {
+        "credentialsParameter": "arn:aws:secretsmanager:ap-northeast-1:508245217387:secret:github_packages-PhL2Ks"
+      },
+      "dnsServers": null,
+      "mountPoints": [ ],
+      "workingDirectory": null,
+      "secrets": null,
+      "dockerSecurityOptions": null,
+      "memory": 356,
+      "memoryReservation": null,
+      "volumesFrom": [
+        {
+          "sourceContainer": "triela-private",
+          "readOnly": true
+        }
+      ],
+      "stopTimeout": null,
+      "image": "docker.pkg.github.com/matanki-saito/pdx-txt-java/rico-app:0.0.4-app",
+      "startTimeout": null,
+      "firelensConfiguration": null,
+      "dependsOn": null,
+      "disableNetworking": null,
+      "interactive": null,
+      "healthCheck": null,
+      "essential": true,
+      "links": null,
+      "hostname": null,
+      "extraHosts": null,
+      "pseudoTerminal": null,
+      "user": null,
+      "readonlyRootFilesystem": null,
+      "dockerLabels": null,
+      "systemControls": null,
+      "privileged": null,
+      "name": "rico-app"
+    }
+  ],
+  "memory": null,
+  "taskRoleArn": "arn:aws:iam::508245217387:role/ecsdockerhub",
+  "family": "rico-task",
+  "pidMode": null,
+  "requiresCompatibilities": [
+    "EC2"
+  ],
+  "networkMode": null,
+  "cpu": null,
+  "inferenceAccelerators": [ ],
+  "proxyConfiguration": null,
+  "volumes": [ ],
+  "placementConstraints": [ ],
+  "tags": [ ]
+}
