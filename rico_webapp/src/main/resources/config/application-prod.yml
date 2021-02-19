@@ -1,1 +1,13 @@
+spring:
+  thymeleaf:
+    cache: false
+  resources:
+    static-locations:
+      - file:./src/main/resources/static/
+      - classpath:/static/
 
+reCaptcha:
+  v3:
+    site-key: 6Legel4aAAAAAMY7t8PBD7xhvrV2OKIPyPEeasO3
+    # secret: [from triela-private#rico-webapp.tk/credentialenv.sh]
+    threshold: 0.5
