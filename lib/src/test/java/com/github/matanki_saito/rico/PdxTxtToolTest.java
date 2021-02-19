@@ -2,7 +2,6 @@ package com.github.matanki_saito.rico;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import org.assertj.core.api.SoftAssertions;
@@ -23,7 +22,7 @@ class PdxTxtToolTest {
             return;
         }
 
-        var json = PdxTxtTool.convertJson(Paths.get(url.toURI()), true);
+        var json = PdxTxtTool.convertTxtToJson(Paths.get(url.toURI()), true);
 
         // Files.writeString(Paths.get("test.json"), json);
 
@@ -38,7 +37,7 @@ class PdxTxtToolTest {
             return;
         }
 
-        var txt = PdxTxtTool.convertTxt(Paths.get(url.toURI()));
+        var txt = PdxTxtTool.convertJsonToTxt(Paths.get(url.toURI()));
 
         // Files.writeString(Paths.get("test.reverse.txt"), txt);
 
@@ -54,11 +53,11 @@ class PdxTxtToolTest {
         }
 
         var exp = assertThrows(PdxParseException.class, () -> {
-            PdxTxtTool.convertJson(Paths.get(url.toURI()), true);
+            PdxTxtTool.convertTxtToJson(Paths.get(url.toURI()), true);
         });
 
-        softAssertions.assertThat(exp.getLine()).isEqualTo(5);
-        softAssertions.assertThat(exp.getCharPosition()).isEqualTo(8);
+        softAssertions.assertThat(exp.getExceptions().get(0).line()).isEqualTo(5);
+        softAssertions.assertThat(exp.getExceptions().get(0).charPositionInLine()).isEqualTo(8);
         softAssertions.assertThat(exp.getMessage()).isNotNull();
     }
 

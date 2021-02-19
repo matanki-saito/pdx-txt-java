@@ -1,0 +1,13 @@
+spring:
+  thymeleaf:
+    cache: false
+  resources:
+    static-locations:
+      - file:./src/main/resources/static/
+      - classpath:/static/
+
+reCaptcha:
+  v3:
+    site-key: 6LfwIOkUAAAAAEwRrWTXRWRq68A3EV-zOi5bbStu
+    # secret: [from triela-private]
+    threshold: 0.5

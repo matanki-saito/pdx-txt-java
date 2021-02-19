@@ -1,14 +1,25 @@
 package com.github.matanki_saito.rico.exception;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Value;
+import java.util.List;
 
-@EqualsAndHashCode(callSuper = true)
-@Builder
-@Value
-public class PdxParseException extends RuntimeException {
-    int line;
-    int charPosition;
-    String message;
+import com.github.matanki_saito.rico.exception.ThrowingErrorListener.Data;
+
+import lombok.Getter;
+
+public class PdxParseException extends ArgumentException {
+    @Getter
+    private List<Data> exceptions;
+
+    public PdxParseException(String message) {
+        super(message);
+    }
+
+    public PdxParseException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
+
+    public PdxParseException(String message, List<Data> data) {
+        super(message);
+        exceptions = data;
+    }
 }

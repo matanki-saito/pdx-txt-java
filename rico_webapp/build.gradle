@@ -1,0 +1,98 @@
+plugins {
+    id 'java'
+    id 'net.researchgate.release' version '2.8.1'
+    id 'org.springframework.boot' version '2.4.2'
+    id 'com.palantir.docker' version '0.26.0'
+}
+
+group 'com.github.matanki_saito'
+version '0.1.0-SNAPSHOT'
+
+sourceCompatibility = JavaVersion.VERSION_15
+targetCompatibility = JavaVersion.VERSION_15
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // アノテーションプリプロセッサ用
+    annotationProcessor 'org.projectlombok:lombok:1.18.16'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.16'
+
+    // 外部(このライブラリの利用者)に公開する依存関係
+    // api
+
+    // 外部(このライブラリの利用者)に公開せず、ライブラリ内の実装でのみ使う依存関係
+    implementation 'com.google.guava:guava:29.0-jre'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.1'
+    implementation 'org.apache.commons:commons-lang3:3.11'
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.4.2'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:2.4.2'
+    implementation 'org.springframework.boot:spring-boot-starter-validation:2.4.2'
+    implementation project(":lib")
+
+    // コンパイル時にのみ必要となる依存関係(実行時にリークしてはならないもの)
+    compileOnly 'org.projectlombok:lombok:1.18.16'
+
+    // コンパイル時には不要だが、実行時に必要な依存関係
+    // runtimeOnly
+
+    // テストをコンパイルするために使用される依存関係
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
+    testImplementation 'org.assertj:assertj-core:3.19.0'
+
+    // テストコンパイル時にのみ必要となる依存関係(実行時にリークしてはならないもの)
+    testCompileOnly 'org.projectlombok:lombok:1.18.16'
+
+    // テストランタイムでのみ必要となる依存関係
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+bootRun {
+    jvmArgs = ['--enable-preview']
+}
+
+task unpack(type: Copy) {
+    dependsOn bootJar
+    from(zipTree(tasks.bootJar.outputs.files.singleFile))
+    into("build/dependency")
+}
+
+docker {
+    name "gnagaoka/rico-app:" + version + "-app"
+    copySpec.from(tasks.unpack.outputs).into("dependency")
+    buildArgs(['DEPENDENCY': "dependency"])
+}
+
+test {
+    useJUnitPlatform()
+    jvmArgs = ['--enable-preview']
+}
+
+javadoc {
+    options.encoding = 'UTF-8'
+    options.addBooleanOption('-enable-preview', true)
+    options.addStringOption('-release', '15')
+}
+
+compileJava {
+    options.compilerArgs += ['--enable-preview']
+    options.encoding = 'UTF-8'
+}
+
+compileTestJava {
+    options.compilerArgs += ['--enable-preview']
+    options.encoding = 'UTF-8'
+}
+
+release {
+    // [skip ci]をコメントに入れないと、無限ループする
+    preTagCommitMessage = '[skip ci] [Gradle Release Plugin] - pre tag commit: '
+    tagCommitMessage = '[skip ci] [Gradle Release Plugin] - creating tag: '
+    newVersionCommitMessage = '[skip ci] [Gradle Release Plugin] - new version commit: '
+
+    git {
+        requireBranch = 'main'
+    }
+}

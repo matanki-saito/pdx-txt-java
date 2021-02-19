@@ -1,11 +1,17 @@
 package com.github.matanki_saito.rico.exception;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 
+import lombok.Getter;
+
 public class ThrowingErrorListener extends BaseErrorListener {
-    public static final ThrowingErrorListener INSTANCE = new ThrowingErrorListener();
+    @Getter
+    private final List<Data> exceptions = new ArrayList<>();
 
     @Override
     public void syntaxError(Recognizer<?, ?> recognizer,
@@ -13,13 +19,9 @@ public class ThrowingErrorListener extends BaseErrorListener {
                             int line,
                             int charPositionInLine,
                             String msg,
-                            RecognitionException e)
-            throws PdxParseException {
-        throw PdxParseException
-                .builder()
-                .line(line)
-                .charPosition(charPositionInLine)
-                .message(msg)
-                .build();
+                            RecognitionException e) {
+        exceptions.add(new Data(line, charPositionInLine, msg));
     }
+
+    public record Data(int line, int charPositionInLine, String message) {}
 }
