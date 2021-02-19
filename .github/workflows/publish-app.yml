@@ -39,7 +39,7 @@ jobs:
 
       - name: Set version to env
         run: |
-          echo VER=`cat rico_webapp/gradle.properties`
+          VER=`cat rico_webapp/gradle.properties`
           echo "RELEASE_VERSION=${VER##version=}" >> $GITHUB_ENV
 
       - name: Configure AWS credentials
