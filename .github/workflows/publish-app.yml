@@ -16,7 +16,7 @@ jobs:
           java-version: 15
       - name: publish application docker to github packages
         run: |
-          ${{ secrets.GITHUB_TOKEN }} | docker login https://docker.pkg.github.com -u matanki-saito --password-stdin
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login https://docker.pkg.github.com -u matanki-saito --password-stdin
           ./gradlew :rico_webapp:docker dockerPush
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
