@@ -62,7 +62,7 @@ task unpack(type: Copy) {
 }
 
 docker {
-    name "gnagaoka/rico-app:" + version + "-app"
+    name "matanki-saito/pdx-txt-java/rico-app:" + version + "-app"
     copySpec.from(tasks.unpack.outputs).into("dependency")
     buildArgs(['DEPENDENCY': "dependency"])
 }
