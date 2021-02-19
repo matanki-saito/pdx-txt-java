@@ -2,7 +2,7 @@ name: publish application
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ main ]
 
 jobs:
   main-job:
