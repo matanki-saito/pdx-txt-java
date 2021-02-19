@@ -9,3 +9,7 @@ Paradox interactive txt format tool | dev-name: Rico
 ## Usage
 
 see packages
+
+## test
+
+`> gradlew test`
