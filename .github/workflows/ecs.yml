@@ -3,7 +3,9 @@ name: ecs test
 on:
   push:
     tags:
-      - 'app-*.*.*'
+      - app-*.*.*
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       info:
