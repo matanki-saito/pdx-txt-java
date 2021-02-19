@@ -9,4 +9,4 @@ if [ $? -ne 0 ]; then
   echo -e "$HOST_IP\t$HOST_DOMAIN" >>/etc/hosts
 fi
 
-java -cp app:app/lib/* -Dspring.profiles.active=prod com.github.matanki_saito.rico_webapp.RicoWebApplication
+java --enable-preview -cp app:app/lib/* -Dspring.profiles.active=prod com.github.matanki_saito.rico_webapp.RicoWebApplication
