@@ -121,6 +121,8 @@ release {
     tagCommitMessage = '[skip ci] [Gradle Release Plugin] - creating tag: '
     newVersionCommitMessage = '[skip ci] [Gradle Release Plugin] - new version commit: '
 
+    tagTemplate = 'lib-${version}'
+
     git {
         requireBranch = 'main'
     }
