@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConvertJsonToTxtForm {
-    @Size(max = 500, message = "500文字までにしてください")
+    @Size(max = 10000, message = "10000文字までにしてください")
     private String json;
 
     @ReCaptchaTokenFilter

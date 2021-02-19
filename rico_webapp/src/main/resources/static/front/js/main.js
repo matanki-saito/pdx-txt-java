@@ -89,7 +89,7 @@ const pdxTxtWebFront = Vue.component('pdx-txt-web-front', {
       <h1>Pdx txt tool</h1>
         <h2>txt</h2>
         <div>
-          <textarea class="form-control" placeholder="paradox txt 500文字まで" rows="10" v-model="pdxtxt"></textarea>
+          <textarea class="form-control" placeholder="paradox txt 10000文字まで" rows="10" v-model="pdxtxt"></textarea>
         </div>
         <div class="input-group" style="width:100%">
             <div class="input-group-prepend">

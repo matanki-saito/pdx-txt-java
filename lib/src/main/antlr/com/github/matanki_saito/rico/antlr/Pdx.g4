@@ -62,6 +62,7 @@ INT: '0' | ([1-9] [0-9]*);
 // parser
 primitive
 : FALSE
+| DATE_TIME
 | TRUE
 | NULL
 | YES
