@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,6 +41,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class PdxTxtTool {
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    public static final String UTF8_BOM = "\uFEFF";
 
     /**
      * ParadoxTxtFormat to Json
@@ -58,6 +60,10 @@ public class PdxTxtTool {
         CharStream charStream;
         try {
             charStream = CharStreams.fromPath(txtFile);
+            var textHead = charStream.getText(Interval.of(0, 1));
+            if (textHead.startsWith(UTF8_BOM)) {
+                charStream.seek(1);
+            }
         } catch (IOException e) {
             throw new MachineException("IO exception", e);
         }

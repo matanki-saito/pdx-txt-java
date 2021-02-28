@@ -1,0 +1,11 @@
+patch:
+  common\culture\cultures\00_baltic.txt:
+    $[0]['baltic_group'][4]['prussian'][4]['female_names']: [ Betten, Dagas, Gelennis,
+                                                              Gerkus, Grasus, Gulbis, Mila, Milyuns, Weslikan, Ziedas ]
+    $[0]['baltic_group'][3]['lithuanian'][4]['female_names']: [ Aldona, Anele, Audra,
+                                                                Ausra, Birute, Dannila, Danute, Evalda, Gaudimante, Giedre, Gintare, Jevna,
+                                                                Kenna, Laima, Mikova, Roze, Saule, Svajone, Vida ]
+    $[0]['baltic_group'][2]['latgalian'][4]['female_names']: [ Agita_baltic, Ausala, Balba,
+                                                               Bitens, Brita, Daira, Darate, Dardedze, Dose, Dzeguze, Galene, Greze, Gunda,
+                                                               Gundega, Ieva, Imela, Kordula, Liga, Maija, Marite, Naula, Rasa, Ruta, Savna,
+                                                               Viba, Zigne ]

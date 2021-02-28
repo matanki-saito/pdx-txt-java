@@ -38,6 +38,8 @@ dependencies {
     implementation 'org.antlr:antlr4-runtime:4.9.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.1'
     implementation 'org.apache.commons:commons-lang3:3.11'
+    implementation 'com.jayway.jsonpath:json-path:2.5.0'
+    implementation 'org.yaml:snakeyaml:1.17'
 
     // コンパイル時にのみ必要となる依存関係(実行時にリークしてはならないもの)
     compileOnly 'org.projectlombok:lombok:1.18.16'
