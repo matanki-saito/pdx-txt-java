@@ -55,7 +55,7 @@ jobs:
         with:
           task-definition: rico_webapp/rico-task.json
           container-name: rico-app
-          image: ghcr.io/matanki-saito/pdx-txt-java/rico-app:${{ env.RELEASE_VERSION }}-app
+          image: ghcr.io/matanki-saito/rico-app:${{ env.RELEASE_VERSION }}-app
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
