@@ -20,7 +20,7 @@ jobs:
           java-version: 15
       - name: publish application docker to github packages
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login https://docker.pkg.github.com -u matanki-saito --password-stdin
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u matanki-saito --password-stdin
           ./gradlew :rico_webapp:docker dockerPush
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -55,7 +55,7 @@ jobs:
         with:
           task-definition: rico_webapp/rico-task.json
           container-name: rico-app
-          image: docker.pkg.github.com/matanki-saito/pdx-txt-java/rico-app:${{ env.RELEASE_VERSION }}-app
+          image: ghcr.io/matanki-saito/pdx-txt-java/rico-app:${{ env.RELEASE_VERSION }}-app
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
