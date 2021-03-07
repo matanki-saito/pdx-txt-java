@@ -13,5 +13,3 @@ see packages
 ## test
 
 `> gradlew test`
-
-aaa
