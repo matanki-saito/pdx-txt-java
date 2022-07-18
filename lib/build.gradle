@@ -18,8 +18,8 @@ repositories {
     jcenter()
 }
 
-sourceCompatibility = JavaVersion.VERSION_15
-targetCompatibility = JavaVersion.VERSION_15
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 dependencies {
     antlr 'org.antlr:antlr4:4.9.1'
@@ -27,8 +27,8 @@ dependencies {
     // https://blog1.mammb.com/entry/2017/08/01/121048
 
     // アノテーションプリプロセッサ用
-    annotationProcessor 'org.projectlombok:lombok:1.18.16'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.16'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
 
     // 外部(このライブラリの利用者)に公開する依存関係
     // api
