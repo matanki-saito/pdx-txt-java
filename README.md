@@ -6,6 +6,10 @@ Paradox interactive txt format tool | dev-name: Rico
 
 `> gradlew generateGrammarSouce`
 
+## Publish app docker image
+
+Include `[app build]` in Commit Message
+
 ## Publish lib
 
 Include `[lib deploy]` in Commit Message
