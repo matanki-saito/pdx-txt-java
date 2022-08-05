@@ -5,8 +5,8 @@ plugins {
     id 'com.palantir.docker' version '0.26.0'
 }
 
-sourceCompatibility = JavaVersion.VERSION_15
-targetCompatibility = JavaVersion.VERSION_15
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
@@ -17,8 +17,8 @@ repositories {
 
 dependencies {
     // アノテーションプリプロセッサ用
-    annotationProcessor 'org.projectlombok:lombok:1.18.16'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.16'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
 
     // 外部(このライブラリの利用者)に公開する依存関係
     // api
@@ -33,7 +33,7 @@ dependencies {
     implementation project(":lib")
 
     // コンパイル時にのみ必要となる依存関係(実行時にリークしてはならないもの)
-    compileOnly 'org.projectlombok:lombok:1.18.16'
+    compileOnly 'org.projectlombok:lombok:1.18.24'
 
     // コンパイル時には不要だが、実行時に必要な依存関係
     runtimeOnly 'com.github.napstr:logback-discord-appender:1.0.0'
@@ -44,7 +44,7 @@ dependencies {
     testImplementation 'org.assertj:assertj-core:3.19.0'
 
     // テストコンパイル時にのみ必要となる依存関係(実行時にリークしてはならないもの)
-    testCompileOnly 'org.projectlombok:lombok:1.18.16'
+    testCompileOnly 'org.projectlombok:lombok:1.18.24'
 
     // テストランタイムでのみ必要となる依存関係
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
@@ -52,11 +52,7 @@ dependencies {
 
 bootJar {
     archiveBaseName.set('rico-webapp-docker')
-    archiveVersion = project.version
-}
-
-bootRun {
-    jvmArgs = ['--enable-preview']
+    archiveVersion.set(project.version)
 }
 
 task unpack(type: Copy) {
@@ -73,22 +69,18 @@ docker {
 
 test {
     useJUnitPlatform()
-    jvmArgs = ['--enable-preview']
 }
 
 javadoc {
     options.encoding = 'UTF-8'
-    options.addBooleanOption('-enable-preview', true)
-    options.addStringOption('-release', '15')
+    options.addStringOption('-release', '17')
 }
 
 compileJava {
-    options.compilerArgs += ['--enable-preview']
     options.encoding = 'UTF-8'
 }
 
 compileTestJava {
-    options.compilerArgs += ['--enable-preview']
     options.encoding = 'UTF-8'
 }
 

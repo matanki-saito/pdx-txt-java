@@ -1,25 +1,19 @@
 package com.github.matanki_saito.rico;
 
-import static com.jayway.jsonpath.JsonPath.using;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.regex.Pattern;
-
+import com.github.matanki_saito.rico.exception.PdxParseException;
+import com.jayway.jsonpath.JsonPath;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.github.matanki_saito.rico.exception.PdxParseException;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.regex.Pattern;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(SoftAssertionsExtension.class)
 class PdxTxtToolTest {
@@ -32,6 +26,12 @@ class PdxTxtToolTest {
         softAssertions.assertThat(json).isNotNull();
     }
 
+    @Test
+    void convertJson2(SoftAssertions softAssertions) throws Exception {
+        var src = getFromResources("test2.txt");
+        var json = PdxTxtTool.convertTxtToJson(src, true);
+        softAssertions.assertThat(json).isNotNull();
+    }
     @Test
     void convertTxt(SoftAssertions softAssertions) throws Exception {
         var src = getFromResources("test.json");
@@ -66,10 +66,10 @@ class PdxTxtToolTest {
                 .set("$..color", "[1,2,4]")
                 .jsonString();
 
-        softAssertions.assertThat(newJson).isEqualTo("");
+        softAssertions.assertThat(newJson).isEqualTo("[{\"activity_feast\":[{\"expiration_days\":\"300\"},{\"has_activity_window\":\"yes\"},{\"days_until_auto_start\":\"20\"},{\"frame\":\"2\"},{\"color\":\"[1,2,4]\"},{\"valid\":[{\"activity_owner\":[{\"is_alive\":\"yes\"},{\"is_imprisoned\":\"no\"}]}]}]}]");
     }
 
-    @Test
+    //@Test
     void extract(SoftAssertions softAssertions) throws Exception {
         Path root = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Crusader Kings III\\game");
         Pattern pattern = Pattern.compile("[^\\\\]*common\\\\culture\\\\cultures\\\\[^\\\\]*\\.txt$");
@@ -80,7 +80,7 @@ class PdxTxtToolTest {
         softAssertions.assertThat(result).isNotNull();
     }
 
-    @Test
+    //@Test
     void patch(SoftAssertions softAssertions) throws Exception {
         Path root = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Crusader Kings III\\game");
         Path patch = getFromResources("extract.yaml");

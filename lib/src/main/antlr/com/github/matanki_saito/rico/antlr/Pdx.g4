@@ -60,6 +60,9 @@ FRAC: DOT [0-9]+;
 INT: '0' | ([1-9] [0-9]*);
 
 // parser
+root
+: elements+=element*;
+
 primitive
 : FALSE
 | DATE_TIME
@@ -89,11 +92,12 @@ value
 // Key allows special characters
 // example) abc.1
 // example) bbb-6-czAÿ.10a_1''5
+// Key allows wrap string
+// example) "Ku-htihth #0"
 key
-: (NUMBER|DATE_TIME|KEY_LEVEL_STRING);
+: (WRAP_STRING|NUMBER|DATE_TIME|KEY_LEVEL_STRING);
 
-root
-: elements+=element*;
+
 
 element
 : keyValue

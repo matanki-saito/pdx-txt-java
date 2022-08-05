@@ -9,5 +9,4 @@ spring:
 reCaptcha:
   v3:
     site-key: 6LfwIOkUAAAAAEwRrWTXRWRq68A3EV-zOi5bbStu
-    # secret: [from IDA env setting]
     threshold: 0.5
