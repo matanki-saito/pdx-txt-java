@@ -10,6 +10,10 @@ Paradox interactive txt format tool | dev-name: Rico
 
 Include `[app build]` in Commit Message
 
+## Publish console
+
+Include `[con build]` in Commit Message
+
 ## Publish lib
 
 Include `[lib deploy]` in Commit Message
