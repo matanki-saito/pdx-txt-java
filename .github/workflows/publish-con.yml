@@ -18,10 +18,10 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 17
-      - name: make fatjar
-        run: ./gradlew :rico_console:shadow shadowJar
       - name: publish application docker to github packages
         run: |
+          ./gradlew :rico_console:shadow shadowJar
+          ls
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u matanki-saito --password-stdin
           ./gradlew :rico_console:docker dockerPush
         env:
