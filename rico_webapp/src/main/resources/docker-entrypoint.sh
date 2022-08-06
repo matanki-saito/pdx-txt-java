@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source /etc/trielaprivate/rico-app.tk/credentialenv.sh
-
 HOST_DOMAIN="host.docker.internal"
 ping -q -c1 $HOST_DOMAIN >/dev/null 2>&1
 if [ $? -ne 0 ]; then
@@ -9,4 +7,4 @@ if [ $? -ne 0 ]; then
   echo -e "$HOST_IP\t$HOST_DOMAIN" >>/etc/hosts
 fi
 
-java --enable-preview -cp app:app/lib/* -Dspring.profiles.active=prod com.github.matanki_saito.rico_webapp.RicoWebApplication
+java -cp app:app/lib/* -Dspring.profiles.active=prod com.github.matanki_saito.rico_webapp.RicoWebApplication

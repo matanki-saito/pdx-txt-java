@@ -4,11 +4,16 @@
 package com.github.matanki_saito.rico;
 
 import java.io.IOException;
-import java.nio.file.Path;
+import java.io.OutputStream;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -32,6 +37,7 @@ import com.github.matanki_saito.rico.exception.SystemException;
 import com.github.matanki_saito.rico.exception.ThrowingErrorListener;
 
 import lombok.experimental.UtilityClass;
+import org.yaml.snakeyaml.Yaml;
 
 /**
  * Paradox txt tool
@@ -42,6 +48,61 @@ import lombok.experimental.UtilityClass;
 public class PdxTxtTool {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     public static final String UTF8_BOM = "\uFEFF";
+
+    /**
+     * Validate txt
+     *
+     * @param txtFilePath path
+     * @return %f:%l:%c: %m\n
+     * @throws SystemException err
+     */
+    public static String validate(Path txtFilePath)
+            throws SystemException {
+        var charStream = charStreamUtil(txtFilePath);
+
+        var context = generateContext(charStream);
+
+        if (context.listener.getExceptions().isEmpty()) {
+            return "";
+        } else {
+            return context
+                    .listener
+                    .getExceptions()
+                    .stream()
+                    .map(x->String.format("%s:%s:%s: %s",
+                            Paths.get("").toAbsolutePath().relativize(txtFilePath),
+                            x.charPositionInLine(),
+                            x.charPositionInLine(),
+                            x.message()))
+                    .collect(Collectors.joining("\n"));
+        }
+    }
+
+    public static void validateAllToSystemOut(Path root, Pattern matchPathPattern)
+            throws SystemException {
+        try {
+            Files.walkFileTree(root, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) {
+                    var pathStr = filePath.toAbsolutePath().toString();
+
+                    var relativePath = root.relativize(filePath);
+
+                    var m = matchPathPattern.matcher(pathStr);
+                    if (m.find()) {
+                        try {
+                            System.out.println(validate(filePath));
+                        } catch (SystemException e) {
+                            throw new IllegalStateException(e);
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new MachineException("", e);
+        }
+    }
 
     /**
      * ParadoxTxtFormat to Json
@@ -57,16 +118,7 @@ public class PdxTxtTool {
     public static String convertTxtToJson(Path txtFile, boolean pretty)
             throws SystemException, ArgumentException {
 
-        CharStream charStream;
-        try {
-            charStream = CharStreams.fromPath(txtFile);
-            var textHead = charStream.getText(Interval.of(0, 1));
-            if (textHead.startsWith(UTF8_BOM)) {
-                charStream.seek(1);
-            }
-        } catch (IOException e) {
-            throw new MachineException("IO exception", e);
-        }
+        var charStream = charStreamUtil(txtFile);
 
         return innerConvertJson(charStream, pretty);
     }
@@ -206,8 +258,9 @@ public class PdxTxtTool {
         return null;
     }
 
-    private String innerConvertJson(CharStream charStream, boolean pretty)
-            throws SystemException, ArgumentException {
+    public record TxtContext(PdxParser.RootContext tree, ThrowingErrorListener listener) { }
+
+    private TxtContext generateContext(CharStream charStream){
         var listener = new ThrowingErrorListener();
 
         var lexer = new PdxLexer(charStream);
@@ -218,13 +271,32 @@ public class PdxTxtTool {
         parser.removeErrorListeners();
         parser.addErrorListener(listener);
 
-        var tree = parser.root();
+        return new TxtContext(parser.root(),listener);
+    }
+    private String innerConvertJson(CharStream charStream, boolean pretty)
+            throws SystemException, ArgumentException {
 
-        if (listener.getExceptions().isEmpty()) {
-            return toJson(tree, pretty);
+        var context = generateContext(charStream);
+
+        if (context.listener.getExceptions().isEmpty()) {
+            return toJson(context.tree, pretty);
         } else {
-            throw new PdxParseException("", listener.getExceptions());
+            throw new PdxParseException("", context.listener.getExceptions());
         }
     }
 
+    private CharStream charStreamUtil(Path path) throws MachineException{
+        CharStream charStream;
+        try {
+            charStream = CharStreams.fromPath(path);
+            var textHead = charStream.getText(Interval.of(0, 1));
+            if (textHead.startsWith(UTF8_BOM)) {
+                charStream.seek(1);
+            }
+
+            return charStream;
+        } catch (IOException e) {
+            throw new MachineException("IO exception", e);
+        }
+    }
 }

@@ -10,4 +10,5 @@
 rootProject.name = 'rico'
 include('lib')
 include 'rico_webapp'
+include 'rico_console'
 

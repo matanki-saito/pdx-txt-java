@@ -19,6 +19,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class PdxTxtToolTest {
 
     @Test
+    void validate(SoftAssertions softAssertions) throws Exception {
+        var src = getFromResources("error.txt");
+        var result= PdxTxtTool.validate(src);
+        var ex = """
+            build\\resources\\test\\error.txt:17:17: no viable alternative at input '{expiration_days!'
+            build\\resources\\test\\error.txt:17:17: extraneous input '!' expecting {WRAP_STRING, NUMBER, DATE_TIME, 'false', 'true', 'null', 'yes', 'no', KEY_LEVEL_STRING, '{', '}'}""";
+        softAssertions.assertThat(result).isEqualTo(ex);
+    }
+
+    @Test
+    void validateAll(SoftAssertions softAssertions) throws Exception {
+        var src = getFromResources("error.txt");
+        PdxTxtTool.validateAllToSystemOut(src.getParent(),Pattern.compile("\\.txt"));
+    }
+    @Test
     void convertJson(SoftAssertions softAssertions) throws Exception {
         var src = getFromResources("test.txt");
         var json = PdxTxtTool.convertTxtToJson(src, true);
