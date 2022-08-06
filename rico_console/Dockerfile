@@ -1,9 +1,7 @@
 FROM openjdk:17-jdk-slim
 
 COPY src/rico_console-all.jar /opt/
-COPY src/rico_console-all.jar app/
 COPY src/docker-entrypoint.sh /opt/
-COPY src/docker-entrypoint.sh app/
 
 RUN apt update
 
@@ -14,7 +12,7 @@ RUN apt-get -y install git
 #RUN wget -O - -q https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh| sh -s -- -b /usr/local/bin/ ${REVIEWDOG_VERSION}
 
 RUN ["chmod", "+x", "opt/docker-entrypoint.sh"]
-# RUN ["chmod", "+x", "opt/rico_console-all.jar"]
+RUN ["chmod", "+x", "opt/rico_console-all.jar"]
 
 # ☢Caution!!☢ ☢Caution!!☢ ☢Caution!!☢
 #
