@@ -68,8 +68,6 @@ compileTestJava {
 
 docker {
     name "ghcr.io/matanki-saito/rico-con:" + version + "-con"
-    copySpec.from(tasks.unpack.outputs).into("dependency")
-    buildArgs(['DEPENDENCY': "dependency"])
 }
 
 release {
