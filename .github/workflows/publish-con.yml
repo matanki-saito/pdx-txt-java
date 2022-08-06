@@ -25,7 +25,7 @@ jobs:
           cd rico_console
           ls
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u matanki-saito --password-stdin
-          ./gradlew :rico_console:docker dockerPush
+          .././gradlew :rico_console:docker dockerPush
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_USER_NAME: matanki.saito
@@ -33,4 +33,4 @@ jobs:
         run: |
           git config --local user.email "matanki.saito@gmail.com"
           git config --local user.name "matanki.saito"
-          ./gradlew :rico_console:release -Prelease.useAutomaticVersion=true
+          .././gradlew :rico_console:release -Prelease.useAutomaticVersion=true
