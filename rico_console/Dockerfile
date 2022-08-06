@@ -1,7 +1,7 @@
 FROM openjdk:17-jdk-slim
 
-COPY src/rico_console-all.jar /app/rico_console-all.jar
-COPY src/docker-entrypoint.sh /app/docker-entrypoint.sh
+COPY src/rico_console-all.jar /app/
+COPY src/docker-entrypoint.sh /app/
 
 RUN apt update
 RUN apt-get -y install wget
