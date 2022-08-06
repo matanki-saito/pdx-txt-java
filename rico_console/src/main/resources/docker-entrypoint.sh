@@ -9,6 +9,9 @@ fi
 
 export REVIEWDOG_GITHUB_API_TOKEN="${INPUT_GITHUB_TOKEN}"
 
+ls
+ls ./app/
+
 java -jar app/rico_console-all.jar -r="./"
 
 #java -jar app/rico_console-all.jar -r="${ROOT_DIR}" | reviewdog -efm="%f:%l:%c: %m" \
