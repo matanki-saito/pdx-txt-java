@@ -34,7 +34,7 @@ inputs:
     default: './'
 runs:
   using: 'docker'
-  image: docker://ghcr.io/matanki-saito/rico-con:0.0.3-con
+  image: docker://ghcr.io/matanki-saito/rico-con:0.0.4-con
 
 # Ref: https://haya14busa.github.io/github-action-brandings/
 # TODO: update branding if you want.
