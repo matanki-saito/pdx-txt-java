@@ -1,5 +1,6 @@
 FROM openjdk:17-jdk-slim
 
+RUN ls
 COPY build/libs/rico_console-all.jar /app/rico_console-all.jar
 COPY src/main/resources/docker-entrypoint.sh /app/docker-entrypoint.sh
 
