@@ -76,7 +76,7 @@ docker {
     name "ghcr.io/matanki-saito/rico-con:" + version + "-con"
     // このプラグインを使うとdocker build contextはbuild/docker以下になる。この場所にあるものしかDockerfileで使えない。
     // 従って下記のように書いてbuild/docker以下にsrcを作り、Dockerfileで使うデータをここに置く
-    //copySpec.from(tasks.shadowJar.outputs.files.singleFile).into("src")
+    copySpec.from(tasks.shadowJar.outputs.files.singleFile).into("src")
     copySpec.from("src/main/resources/docker-entrypoint.sh").into("src")
 }
 

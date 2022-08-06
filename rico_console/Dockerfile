@@ -1,8 +1,15 @@
-# コードを実行するコンテナイメージ
-FROM alpine:3.10
+FROM openjdk:17-jdk-slim
 
-# アクションのリポジトリからコードファイルをコンテナのファイルシステムパス `/`にコピー
-COPY src/main/resources/docker-entrypoint.sh /docker-entrypoint.sh
+COPY src/rico_console-all.jar /app/
+COPY src/docker-entrypoint.sh /app/
 
-# dockerコンテナが起動する際に実行されるコードファイル (`entrypoint.sh`)
-ENTRYPOINT ["/docker-entrypoint.sh"]
+RUN apt update
+RUN apt-get -y install wget
+
+#ENV REVIEWDOG_VERSION=v0.14.1
+#RUN wget -O - -q https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh| sh -s -- -b /usr/local/bin/ ${REVIEWDOG_VERSION}
+
+RUN ["chmod", "+x", "app/docker-entrypoint.sh"]
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
