@@ -1,4 +1,4 @@
-name: publish application
+name: publish console
 
 on:
   push:
@@ -31,4 +31,4 @@ jobs:
         run: |
           git config --local user.email "matanki.saito@gmail.com"
           git config --local user.name "matanki.saito"
-          .././gradlew :rico_console:release -Prelease.useAutomaticVersion=true
+          ./gradlew :rico_console:release -Prelease.useAutomaticVersion=true
