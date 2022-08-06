@@ -30,3 +30,4 @@
 /data
 # Ignore Gradle build output directory
 build
+lib/src/main/gen
