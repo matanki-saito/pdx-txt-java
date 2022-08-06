@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(SoftAssertionsExtension.class)
 class PdxTxtToolTest {
-
     @Test
     void validate(SoftAssertions softAssertions) throws Exception {
         var src = getFromResources("error.txt");
@@ -27,7 +26,6 @@ class PdxTxtToolTest {
             build\\resources\\test\\error.txt:17:17: extraneous input '!' expecting {WRAP_STRING, NUMBER, DATE_TIME, 'false', 'true', 'null', 'yes', 'no', KEY_LEVEL_STRING, '{', '}'}""";
         softAssertions.assertThat(result).isEqualTo(ex);
     }
-
     @Test
     void validateAll(SoftAssertions softAssertions) throws Exception {
         var src = getFromResources("error.txt");
