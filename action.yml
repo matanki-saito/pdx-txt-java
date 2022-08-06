@@ -1,43 +1,16 @@
-name: 'Run Rico with reviewdog'
-description: 'Pdx text linter'
-author: 'gnagaoka(saito-matanki)'
+# action.yml
+name: 'Hello World'
+description: 'Greet someone and record the time'
 inputs:
-  github_token:
-    description: 'GITHUB_TOKEN'
-    default: '${{ github.token }}'
-  workdir:
-    description: 'Working directory relative to the root directory.'
-    default: '.'
-  ### Flags for reviewdog ###
-  level:
-    description: 'Report level for reviewdog [info,warning,error]'
-    default: 'error'
-  reporter:
-    description: 'Reporter of reviewdog command [github-pr-check,github-pr-review].'
-    default: 'github-pr-check'
-  filter_mode:
-    description: |
-      Filtering mode for the reviewdog command [added,diff_context,file,nofilter].
-      Default is added.
-    default: 'added'
-  fail_on_error:
-    description: |
-      Exit code for reviewdog when errors are found [true,false]
-      Default is `false`.
-    default: 'false'
-  reviewdog_flags:
-    description: 'Additional reviewdog flags'
-    default: ''
-  ### Flags for Rico ###
-  ROOT_DIR:
-    description: 'target root dir'
-    default: './'
+  who-to-greet:  # id of input
+    description: 'Who to greet'
+    required: true
+    default: 'World'
+outputs:
+  time: # id of output
+    description: 'The time we greeted you'
 runs:
   using: 'docker'
-  image: docker://ghcr.io/matanki-saito/rico-con:0.0.6-con
-
-
-# TODO: update branding if you want.
-branding:
-  icon: 'check'
-  color: 'blue'
+  image: 'rico_console/Dockerfile'
+  args:
+    - ${{ inputs.who-to-greet }}
