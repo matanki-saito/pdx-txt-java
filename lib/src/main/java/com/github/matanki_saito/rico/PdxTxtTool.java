@@ -71,7 +71,7 @@ public class PdxTxtTool {
                     .stream()
                     .map(x->String.format("%s:%s:%s: %s",
                             Paths.get("").toAbsolutePath().relativize(txtFilePath.toAbsolutePath()),
-                            x.charPositionInLine(),
+                            x.line(),
                             x.charPositionInLine(),
                             x.message()))
                     .collect(Collectors.joining("\n"));

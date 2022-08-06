@@ -22,8 +22,8 @@ class PdxTxtToolTest {
         var src = getFromResources("error.txt");
         var result= PdxTxtTool.validate(src);
         var ex = """
-            build\\resources\\test\\error.txt:17:17: no viable alternative at input '{expiration_days!'
-            build\\resources\\test\\error.txt:17:17: extraneous input '!' expecting {WRAP_STRING, NUMBER, DATE_TIME, 'false', 'true', 'null', 'yes', 'no', KEY_LEVEL_STRING, '{', '}'}""";
+            build\\resources\\test\\error.txt:2:17: no viable alternative at input '{expiration_days!'
+            build\\resources\\test\\error.txt:2:17: extraneous input '!' expecting {WRAP_STRING, NUMBER, DATE_TIME, 'false', 'true', 'null', 'yes', 'no', KEY_LEVEL_STRING, '{', '}'}""";
         softAssertions.assertThat(result).isEqualTo(ex);
     }
     @Test
