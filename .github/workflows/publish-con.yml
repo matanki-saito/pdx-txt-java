@@ -2,7 +2,7 @@ name: publish console
 
 on:
   push:
-    branches: [ main,develop ]
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       info:
