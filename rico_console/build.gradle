@@ -70,6 +70,10 @@ docker {
     name "ghcr.io/matanki-saito/rico-con:" + version + "-con"
 }
 
+shadowJar {
+    archiveVersion.set('')
+}
+
 release {
     // [skip ci]をコメントに入れないと、無限ループする
     preTagCommitMessage = '[skip ci] [Gradle Release Plugin] - pre tag commit: '
