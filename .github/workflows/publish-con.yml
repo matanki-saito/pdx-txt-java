@@ -22,12 +22,8 @@ jobs:
         run: |
           cd rico_console
           .././gradlew :rico_console:shadow shadowJar
-          ls
-          cd build/libs
-          ls
-          cd ../../
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u matanki-saito --password-stdin
-          .././gradlew rico_console:docker dockerPush
+          .././gradlew :rico_console:docker dockerPush
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_USER_NAME: matanki.saito
