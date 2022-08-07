@@ -86,12 +86,13 @@ public class PdxTxtTool {
                 public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) {
                     var pathStr = filePath.toAbsolutePath().toString();
 
-                    var relativePath = root.relativize(filePath);
-
                     var m = matchPathPattern.matcher(pathStr);
                     if (m.find()) {
                         try {
-                            System.out.println(validate(filePath));
+                            var result = validate(filePath);
+                            if(!result.equals("")){
+                                System.out.println(result);
+                            }
                         } catch (SystemException e) {
                             throw new IllegalStateException(e);
                         }
