@@ -29,7 +29,7 @@ class PdxTxtToolTest {
     @Test
     void validateAll(SoftAssertions softAssertions) throws Exception {
         var src = getFromResources("error.txt");
-        PdxTxtTool.validateAllToSystemOut(src.getParent(),Pattern.compile("\\.txt"));
+        PdxTxtTool.validateAllToSystemOut(Path.of("C:\\repo\\linttest"),Pattern.compile("\\.txt"));
     }
     @Test
     void convertJson(SoftAssertions softAssertions) throws Exception {

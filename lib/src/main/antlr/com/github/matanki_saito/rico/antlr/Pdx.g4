@@ -61,7 +61,7 @@ INT: '0' | ([1-9] [0-9]*);
 
 // parser
 root
-: elements+=element*;
+: elements+=element* EOF;
 
 primitive
 : FALSE
@@ -96,8 +96,6 @@ value
 // example) "Ku-htihth #0"
 key
 : (WRAP_STRING|NUMBER|DATE_TIME|KEY_LEVEL_STRING);
-
-
 
 element
 : keyValue
