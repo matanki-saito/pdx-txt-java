@@ -34,7 +34,7 @@ inputs:
     default: './'
 runs:
   using: 'docker'
-  image: docker://ghcr.io/matanki-saito/rico-con:0.0.17-con
+  image: docker://ghcr.io/matanki-saito/rico-con:0.0.18-con
 
 
 # TODO: update branding if you want.
