@@ -3,23 +3,22 @@ grammar Pdx;
     package com.github.matanki_saito.rico.antlr;
 }
 
-// lexer
 COMMENT: '#' ~('\n'|'\r')* ('\r\n' | '\r' | '\n' | EOF) -> skip;
-
-// "ABC" "" "\n" "ABC\nCBA" "cat and dog"
-WRAP_STRING: '"' CHAR* '"';
 
 // space is ignored
 SPACE: (' '|'\t'|'\r'|'\n'|'\r\n') -> skip;
 
+// "ABC" "" "\n" "ABC\nCBA" "cat and dog"
+WRAP_STRING: '"' CHAR* '"';
+
 // ex) 1.0, 0.1, 95.21, -2.52, 0.0
-FLOAT: '-'? [0-9]+ DOT [0-9]+;
+FLOAT: '-'? [0-9]+ '.' [0-9]+;
 // ex) -1 -2
 MINT: '-' [1-9] [0-9]*;
 // ex) 0, 2, 100
 INT: '0' | ([1-9] [0-9]*);
 
-DATE_TIME : INT DOT INT DOT INT;
+DATE_TIME : INT '.' INT '.' INT;
 
 FALSE: 'false';
 TRUE: 'true';
@@ -27,29 +26,48 @@ NULL : 'null';
 YES : 'yes';
 NO : 'no';
 
+PREV_PREV: 'PREV_PREV';
+CAPITAL_A: 'CAPITAL';
+FROM: 'FROM';
 ROOT: 'ROOT' | 'root';
-PREV: 'PREV';
-TAG3 : [A-Z] [A-Z] [A-Z];
+PREV: 'PREV' | 'prev';
 
 // logic
 OR : 'OR';
-NOT : 'NOT';
 IF: 'if';
 ELSE_IF: 'else_if';
 ELSE: 'else';
 CALC_TRUE_IF: 'calc_true_if';
-TRIGGR: 'trigger';
-LIMIT : 'limit';
-CHANCE: 'chance';
 
-// int operation
-PRIVINCE_ID: 'province_id';
-AMOUNT: 'amount';
-FACTOR: 'factor';
+OBJECT_OPERATION
+:CHANCE
+|'effect'
+|'potential';
+
+// int operation(0,1,2,...)
+INT_OPERATION
+:'amount'
+|'government_rank'
+|'total_development'
+|'mil_tech'
+|'slot'
+|'owns'
+|'is_year'
+|'base_tax'
+|'base_production'
+|'base_manpower'
+;
+
+// mint and int operation(...,-2,-1,0,1,2,...)
+MINT_INT_OPERATION
+: 'add_adm_power'
+| 'add_dip_power'
+| 'add_mil_power'
+| 'add_legitimacy'
+| 'loyalty';
 
 // number operation
 GLOBAL_UNREST: 'global_unrest';
-DURATION: 'duration';
 RECOVER_NAVY_MORALE_SPEED: 'recover_navy_morale_speed';
 GLOBAL_MANPOWER_MODIFIER: 'global_manpower_modifier';
 LAND_ATTRITION: 'land_attrition';
@@ -59,29 +77,62 @@ MANPOWER_RECOVERY_SPEED: 'manpower_recovery_speed';
 LAND_FORCELIMIT_MODIFIER: 'land_forcelimit_modifier';
 NAVAL_FORCELIMIT_MODIFIER: 'naval_forcelimit_modifier';
 
-// binary operation
-ONMAP: 'onmap';
-IS_CAPITAL: 'is_capital';
-IS_FEMALE: 'is_female';
-FEMALE: 'female';
-HAS_PORT: 'has_port';
-IS_TRIGGERD_ONLY: 'is_triggered_only';
+BINARY_OPERATION
+:'onmap'
+|'is_capital'
+|'is_female'
+|'female'
+|'has_port'
+|'is_triggered_only'
+|'has_country_shield'
+|'generic'
+|'ai'
+|'hre'
+|'normal_or_historical_nations'
+|'is_city'
+|'hidden'
+|'always'
+|'is_node_in_trade_company_region';
 
-// pointed operation
-TAG: 'tag';
+TAG_OPERATION
+:'tag'
+|'country_or_non_sovereign_subject_holds'
+|'alliance_with';
 
-// string operation
-HAS_DLC : 'has_dlc';
+STRING_OPERATION
+: 'has_dlc';
 
-// logic or number operation
+KEY_OR_STRING_OPERATION
+:'icon';
+
+KEY_OPERATION
+: 'has_building'
+| 'estate'
+| 'has_estate'
+| 'desc'
+| 'region'
+| 'map_setup'
+| 'has_reform'
+| 'government'
+| 'trade_goods'
+| 'culture_group'
+;
+
+// other
 PRESTIGE: 'prestige';
 WAR_EXHAUSTION: 'war_exhaustion';
-
-// logic or binary operation
 LUCK: 'luck';
-
-// logic or string
 MODIFIER: 'modifier';
+CAPITAL: 'capital';
+DYNASTY: 'dynasty';
+CHANCE: 'chance';
+FACTOR: 'factor';
+POSITION: 'position';
+ADD_CORE: 'add_core';
+CONTROLLER: 'controller';
+NAME: 'name';
+CULTURE: 'culture';
+PROVINCE_ID: 'province_id';
 
 BRACHET_START: '{';
 BRACHET_END: '}';
@@ -94,31 +145,34 @@ GTE: '>=';
 Semicolon: ':';
 Apostrophe: '’';
 SINGLE_QUOTE: '\'';
-UNDERSCORE: '_';
 HTPHEN: '-';
-DOT: '.';
 AT_MARK: '@';
-ALPHABETS: [a-zA-Z];
+ALPHABETS: [a-zA-Z_.]+;
 EUROPEAN_LANG_CHARS: [\u{C0}-\u{FF}\u{153}\u{161}\u{178}\u{160}\u{152}\u{17D}\u{17E}]; // À-ÿœšŸŠŒŽž
 
 CHAR: ~[\u{22}\u{5C}\u{0}-\u{1F}]
     | '\\' [bfnrt];
 EXP: [eE] ('-'|'+')? [0-9]+;
-FRAC: DOT [0-9]+;
+FRAC: '.' [0-9]+;
+
+NOT: 'NOT' SPACE?;
+AND: 'AND' SPACE?;
+
+// state tag
+AAA: ('A'..'Z') ('A'..'Z') ('A'..'Z') SPACE;
 
 // parser
 root
-: elements+=element+ EOF;
+: elements+=element* EOF;
 
 keyLevelString:
-  ( DOT
-  | AT_MARK
+  ( AT_MARK
   | ALPHABETS
   | EUROPEAN_LANG_CHARS
   | INT
+  | FRAC
   | Semicolon
   | HTPHEN
-  | UNDERSCORE
   | Apostrophe
   | SINGLE_QUOTE)+;
 
@@ -132,10 +186,9 @@ primitive
 | FLOAT
 | MINT
 | INT
-| ROOT
-| PREV
-| TAG3
-| keyLevelString
+| CAPITAL_A
+| (keyLevelString)
+| tagC
 | WRAP_STRING;
 
 nameSeparator
@@ -159,21 +212,38 @@ value
 // Key allows wrap string
 // example) "Ku-htihth #0"
 key
-: (WRAP_STRING|INT|DATE_TIME|keyLevelString|OR|NOT);
+: (WRAP_STRING|INT|DATE_TIME|keyLevelString|tagC);
 
 element
 : logicPair
+| limitPair
+| triggerPair
+| toolTipPair
 | chancePair
+| factorPair
 | intPair
+| provincesToHighlightPair
 | intAndMintPair
 | numberPair
-| factorPair
+| add_estate_loyalty_modifierPair
+| add_estate_loyaltyPair
+| add_province_modifier
+| coutnryTargetPair
+| positionPair
 | binaryPair
 | modifierPair
 | stringPair
 | ifPair
-| tagPair
+| namePair
+| keyOrNamePair
+| keyPair
+| dynastyPair
+| colorPair
+| capitalPair
 | wrapedStringPair
+| addCorePair
+| controllerPair
+| objectPair
 | keyValue
 | array
 | primitive;
@@ -182,41 +252,62 @@ keyValue
 : key nameSeparator value;
 
 ifPair
-: IF EQ array (ELSE_IF EQ array)* (ELSE EQ array)? ;
+: IF EQ array (ELSE_IF EQ array)* (ELSE EQ array)?;
 
 logicPair
 : (CALC_TRUE_IF
-    |TRIGGR
-    |LIMIT
     |PRESTIGE
     |LUCK
     |WAR_EXHAUSTION
-  ) EQ array;
+    |NOT
+    |AND
+    |OR
+    |FROM
+  ) EQ cArray;
+
+objectPair
+: OBJECT_OPERATION EQ array;
 
 binaryPair
-: (ONMAP
-    |IS_CAPITAL
-    |IS_FEMALE
-    |FEMALE
-    |HAS_PORT
-    |IS_TRIGGERD_ONLY
-    |LUCK
-  ) EQ (YES|NO);
+: (BINARY_OPERATION|LUCK) EQ (YES|NO);
 
 intPair
-: (AMOUNT|PRIVINCE_ID|ADVISOR_POOL) EQ INT;
+: INT_OPERATION EQ INT;
 
 intAndMintPair
-: (DURATION) EQ (INT|MINT);
+: MINT_INT_OPERATION EQ (INT|MINT);
 
 stringPair
 : MODIFIER EQ keyLevelString;
 
+keyPair
+: KEY_OPERATION EQ (keyLevelString|array);
+
 wrapedStringPair
-: HAS_DLC EQ WRAP_STRING;
+: STRING_OPERATION EQ WRAP_STRING;
+
+keyOrNamePair
+: KEY_OR_STRING_OPERATION EQ (WRAP_STRING|keyLevelString);
 
 tagPair
-: TAG EQ (ROOT|TAG3);
+: TAG_OPERATION EQ tagC;
+
+namePair
+: NAME EQ (WRAP_STRING|keyLevelString|array);
+
+capitalPair
+: CAPITAL EQ (INT|WRAP_STRING|keyLevelString);
+
+tagC
+: AAA
+| ROOT
+| FROM
+| PREV
+| NOT
+| AND;
+
+dynastyPair
+: DYNASTY EQ (WRAP_STRING|keyLevelString|ROOT);
 
 chancePair
 : CHANCE EQ BRACHET_START elements+=chancePairElement* BRACHET_END;
@@ -231,6 +322,16 @@ modifierPair
 factorPair
 : FACTOR EQ (FLOAT|INT|MINT);
 
+positionPair
+: POSITION EQ (INT|(BRACHET_START positionPairElement positionPairElement BRACHET_END));
+
+positionPairElement
+: 'x' EQ (INT|MINT)
+| 'y' EQ (INT|MINT);
+
+addCorePair
+: ADD_CORE EQ (tagC|INT);
+
 numberPair
 : (RECOVER_NAVY_MORALE_SPEED
     |GLOBAL_UNREST
@@ -244,6 +345,125 @@ numberPair
     |NAVAL_FORCELIMIT_MODIFIER
   ) EQ (FLOAT|INT|MINT);
 
+colorPair
+: ('color'|'revolutionary_colors') EQ BRACHET_START INT INT INT BRACHET_END;
+
+controllerPair
+: CONTROLLER EQ (tagC|array);
+
+culturePair
+: CULTURE EQ (array|keyLevelString|ROOT);
+
+conditionPair
+: ('is_claim'
+    |'is_core'
+    |'is_rival'
+    |'country_or_non_sovereign_subject_holds'
+    |'is_permanent_claim'
+    |'is_capital_of'
+    |'is_state_core'
+    |'has_discovered') EQ (ROOT|PREV)
+| customTriggerTooltip
+| 'development' EQ (INT|CAPITAL_A)
+| 'owns_core_province'|'hre_size' EQ INT
+| 'is_subject_other_than_tributary_trigger'|'is_city' EQ (YES|NO)
+| ('adm'|'dip'|'mil'|'num_free_building_slots'|'mil_tech'|'num_of_colonists') EQ INT
+| ('has_country_modifier'
+    |'has_building'
+    |'has_terrain'
+    |'has_estate_privilege'
+    |'has_reform'
+    |'religion_group'
+    |'area'
+    |'continent'
+    |'primary_culture'
+    |'has_province_flag') EQ keyLevelString
+| 'religion' EQ (keyLevelString|ROOT|PREV|FROM)
+| 'type' EQ ('all'|'any')
+| rootPair
+| provinceIdPair
+| tagPair
+| ownedByPair
+| provinceTargetPair
+| logicPair
+| culturePair
+| num_of_owned_provinces_with
+| keyLevelString EQ cArray
+| customTriggerTooltip
+;
+
 array
 : BRACHET_START elements+=element* BRACHET_END;
 
+cArray
+: BRACHET_START cElements+=conditionPair* BRACHET_END;
+
+limitPair
+: 'limit' EQ cArray;
+
+triggerPair
+: 'trigger' EQ (BRACHET_START ifPair BRACHET_END)|cArray;
+
+provinceTargetPair
+: (INT|FROM|'any_neighbor_province') EQ BRACHET_START (provinceMethod|tradeSharePair)* BRACHET_END;
+
+provinceMethod
+: 'is_strongest_trade_power' EQ ROOT;
+
+tradeSharePair
+: 'trade_share' EQ BRACHET_START 'country' EQ ROOT 'share' EQ INT BRACHET_END;
+
+ownedByPair
+: 'owned_by' EQ ROOT;
+
+provincesToHighlightPair
+: 'provinces_to_highlight' EQ cArray;
+
+coutnryTargetPair
+: ('owner'|'overlord'|'every_country'|'area') EQ array;
+
+rootPair
+: ROOT EQ array;
+
+provinceIdPair
+: PROVINCE_ID EQ (INT|PREV_PREV);
+
+num_of_owned_provinces_with
+: 'num_of_owned_provinces_with' EQ BRACHET_START conditionPair* 'value' EQ INT conditionPair* BRACHET_END;
+
+customTriggerTooltip
+: 'custom_trigger_tooltip' EQ BRACHET_START
+ (('tooltip' EQ keyLevelString)|conditionPair)+
+BRACHET_END;
+
+toolTipPair
+: 'tooltip' EQ BRACHET_START add_country_modifierPair BRACHET_END;
+
+add_country_modifierPair
+: 'add_country_modifier' EQ BRACHET_START namePair durationPair ('hidden' EQ YES|NO)? BRACHET_END;
+
+add_estate_loyalty_modifierPair
+: 'add_estate_loyalty_modifier' EQ BRACHET_START
+    'estate' EQ keyLevelString
+    'desc' EQ keyLevelString
+    loyaltyPair
+    durationPair
+  BRACHET_END;
+
+add_estate_loyaltyPair
+: 'add_estate_loyalty' EQ BRACHET_START
+    'estate' EQ keyLevelString
+    loyaltyPair
+  BRACHET_END;
+
+add_province_modifier
+: 'add_province_modifier' EQ BRACHET_START
+    namePair
+    durationPair
+  BRACHET_END;
+
+loyaltyPair
+: 'loyalty' EQ (MINT|INT);
+
+durationPair
+: 'duration' EQ (INT|MINT);
