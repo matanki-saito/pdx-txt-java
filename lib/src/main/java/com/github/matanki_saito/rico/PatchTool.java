@@ -31,10 +31,22 @@ import com.jayway.jsonpath.Option;
 
 import lombok.experimental.UtilityClass;
 
+/**
+ * パッチツール
+ */
 @UtilityClass
 public class PatchTool {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Yamlにパッチを当てる
+     *
+     * @param targetGameDirectoryRootPath 対象ゲームディレクトリルートパス
+     * @param patchYamlFilePath パッチ
+     * @param exportDirectoryPath 出力ディレクトリパス
+     * @return パッチ済み対象
+     * @throws IOException IOエラー
+     */
     public Object patchByYaml(Path targetGameDirectoryRootPath,
                               Path patchYamlFilePath,
                               Path exportDirectoryPath) throws IOException {
@@ -82,6 +94,14 @@ public class PatchTool {
         }
     }
 
+    /**
+     * 抽出
+     * @param targetGameDirectoryRootPath 対象ゲームディレクトリルートパス
+     * @param matchPathPattern ファイル名一致規則
+     * @param jsonPath 抽出JSON PATH規則
+     * @return 抽出結果
+     * @throws MachineException 内部例外
+     */
     public String extract(Path targetGameDirectoryRootPath,
                           Pattern matchPathPattern,
                           String jsonPath) throws MachineException {

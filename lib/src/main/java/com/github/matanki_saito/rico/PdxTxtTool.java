@@ -4,7 +4,6 @@
 package com.github.matanki_saito.rico;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
@@ -12,8 +11,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -37,7 +34,6 @@ import com.github.matanki_saito.rico.exception.SystemException;
 import com.github.matanki_saito.rico.exception.ThrowingErrorListener;
 
 import lombok.experimental.UtilityClass;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * Paradox txt tool
@@ -47,6 +43,10 @@ import org.yaml.snakeyaml.Yaml;
 @UtilityClass
 public class PdxTxtTool {
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * UTF8 BOM
+     */
     public static final String UTF8_BOM = "\uFEFF";
 
     /**
@@ -78,6 +78,13 @@ public class PdxTxtTool {
         }
     }
 
+    /**
+     * 対象のフォルダルートを再帰的に辿ってエラーを標準出力に出力
+     *
+     * @param root 対象のフォルダルート
+     * @param matchPathPattern 一致例外
+     * @throws SystemException システム例外
+     */
     public static void validateAllToSystemOut(Path root, Pattern matchPathPattern)
             throws SystemException {
         try {
@@ -124,6 +131,16 @@ public class PdxTxtTool {
         return innerConvertJson(charStream, pretty);
     }
 
+
+    /**
+     * Jsonに変換
+     *
+     * @param txt 入力テキスト
+     * @param pretty 出力を整形するかどうか
+     * @return 変換されたJSONデータ
+     * @throws ArgumentException 引数例外
+     * @throws SystemException システム例外
+     */
     public static String convertTxtToJson(String txt, boolean pretty)
             throws ArgumentException, SystemException {
         CharStream charStream = CharStreams.fromString(txt);
@@ -259,6 +276,12 @@ public class PdxTxtTool {
         return null;
     }
 
+    /**
+     * Context
+     *
+     * @param tree parserツリー
+     * @param listener parserリスナー
+     */
     public record TxtContext(PdxParser.RootContext tree, ThrowingErrorListener listener) { }
 
     private TxtContext generateContext(CharStream charStream){
