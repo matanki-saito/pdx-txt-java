@@ -36,6 +36,7 @@ COMMENT: '#' ~('\n'|'\r')* ('\r\n' | '\r' | '\n' | EOF) -> skip;
 SPACE: (' '|'\t'|'\r'|'\n'|'\r\n') -> skip;
 WRAP_STRING: '"' CHAR* '"'; // "ABC" "" "\n" "ABC\nCBA" "cat and dog"
 fragment CHAR: ~[\u{22}\u{5C}\u{0}-\u{1F}] | '\\' [bfnrt];
+DATETIME: [0-9]+ '.' [0-9]+ '.' [0-9]+;
 MFLOAT: '-' [0-9]+ '.' [0-9]+;
 FLOAT_0_1: '0.0' | '1.0' |'0.' [0-9]+;
 FLOAT: [0-9]+ '.' [0-9]+;
@@ -51,16 +52,17 @@ INT_5: '5';
 INT_6: '6';
 MINT: '-' [1-9] [0-9]*;
 INT: ([1-9] [0-9]*);
-TAG: [A-Z] [A-Z] [A-Z];
-DATE_TIME : INT '.' INT '.' INT;
 E: '=';
 A: '{';
 Z: '}';
+ALL_ANY: 'all'|'any'|'ALL'|'ANY';
+EMPEROR: 'emperor';
+// Dynamic scopes
 ROOT: 'ROOT' | 'root' | 'prev' | 'PREV' | 'this' | 'THIS' | 'FROM';
-COLONIAL_X: 'colonial_' [a-z_]+;
 BOOL: 'yes'|'no';
 EVENT_TARGET: 'event_target:' [a-z_]+;
 BASE: [a-zA-Z_.@\-’:\\'\u{C0}-\u{FF}\u{153}\u{161}\u{178}\u{160}\u{152}\u{17D}\u{17E}0-9]+; // À-ÿœšŸŠŒŽž
+
 
 // ミッションルート
 root: series* EOF;
@@ -98,7 +100,7 @@ mission: key E A (
 // 表示行
 |('position' E positive_integer)
 // 指定の日付を超えたら自動で完了とみなす
-|('completed_by' E DATE_TIME)
+|('completed_by' E DATETIME)
 // AI重要度
 |('ai_weight' E A 'factor' E percentage_range_0_inf ('modifier' E A 'factor' E percentage_range_0_inf country_trigger* Z)* Z)
 // AI優先度
@@ -114,19 +116,61 @@ country_effect
 | 'hidden_effect' E A country_effect* Z
 // イベントを発生させる（daysがある場合はMTTH）
 | 'country_event' E A 'id' E key ('days' E positive_integer)? Z
+// 指定の数値の確率でランダム効果を発生させる
+| 'random_list' E A (positive_integer E A country_effect* Z)+  Z
 //////////////////////////////////////////////////////
+// 絶対主義の値を加算
+| 'add_absolutism' E positive_integer
+// 共和的伝統を加算
+| 'add_republican_tradition' E positive_integer
+// 信仰を加算
+| 'add_devotion' E positive_integer
+// 指定の場所に首都を設定する
+| 'set_capital' E positive_integer
+// 後継者の能力を変更
+| 'change_heir_adm' E positive_integer
+| 'change_heir_dip' E positive_integer
+| 'change_heir_mil' E positive_integer
+// 現在のスコープに戦争疲弊を追加します。
+| 'add_war_exhaustion' E integer
+// 指定の国家を指定の属国として作成する
+| 'create_subject' E A 'subject_type' E subject_types 'subject' E country_tags Z
+// 天命を加算する
+| 'add_mandate' E integer
+// 階級特権をセットする
+| 'set_estate_privilege' E estate_privileges
+// 同宗教への国家の評価を底上げする
+| 'add_increase_same_religion_opinion' E BOOL
+// 許可する宗教学派
+| 'allow_baseline_invite_scholar' E A 'religious_school' E religious_schools Z
+// 指定の宗教への評価を底上げする
+| 'add_opinion_of_religion' E A 'religion' E religions Z
+// 現在のスコープで使用される定義済み階級の忠誠を追加します。
+| 'add_estate_loyalty' E A 'estate' E estates 'loyalty' E integer Z
+// 現在のスコープに対して指定された階級特権を削除します。
+| 'remove_estate_privilege' E estate_privileges
+// 指定のkeyに対して指定の値を設定する
+| 'set_variable' E A 'which' E key 'value' E positive_integer Z
+// 対象の国家が対象の州に請求権を得る
+| 'add_claim' E positive_integer
+// 天命を加算する
+| 'add_mandate' E positive_integer
+// 遊牧民の結束を加算する
+| 'add_horde_unity' E positive_integer
+// mandate_large_effectを加える
+| 'add_mandate_large_effect' E BOOL
 // 現在のスコープの国名を指定のもの（locaにあるキー名）に変更する
 | 'override_country_name' E key
 // 対象国を歴史的友好国とする
-| 'add_historical_friend' E ROOT
+| 'add_historical_friend' E (ROOT|country_tags)
 // 総主教の権威を追加する
 | 'add_patriarch_authority' E percentage_range_0_inf
 // グローバルフラグを追加する
 | 'set_global_flag' E key
 // 定義されたスコープの現在のスコープに対してcasus belliを追加します。
-| 'reverse_add_casus_belli' E A 'target' E ROOT 'type' E cb_types 'months' E positive_integer Z
+| 'reverse_add_casus_belli' E A ('target' E ROOT)? 'type' E cb_types 'months' E positive_integer ('target' E ROOT)? Z
 // 指定の国家から指定のCBを削除
-| 'remove_casus_belli' E A 'type' E cb_types 'target' E TAG Z
+| 'remove_casus_belli' E A 'type' E cb_types 'target' E country_tags Z
 // 国家補正を指定の期間有効にする。duration -1は永続
 | 'add_country_modifier' E A'name' E key 'duration' E (positive_integer|MINT_1) Z
 // 対象の文化を需要文化とする
@@ -146,7 +190,7 @@ country_effect
 // 安定度を上昇させる
 | 'add_stability' E integer
 // 指定の階級の土地所有割合を指定の数値に変更する
-| 'change_estate_land_share' E A'estate' E ('all'|'any'|estates) 'share' E integer ('province' E ROOT)? Z
+| 'change_estate_land_share' E A'estate' E (ALL_ANY|estates) 'share' E integer ('province' E ROOT)? Z
 | 'add_estate_loyalty_modifier' E A'estate' E estates 'desc' E key 'loyalty' E integer 'duration' E (positive_integer|MINT_1) Z
 // 独立欲求を数値の数だけ増やす
 | 'add_liberty_desire' E integer
@@ -173,7 +217,7 @@ country_effect
 // 指定の数だけ革新性を加算する
 | 'change_innovativeness' E integer
 // 指定の階級特権の使用を開放する
-| 'unlock_estate_privilege' E A 'estate_privilege' E key Z
+| 'unlock_estate_privilege' E A 'estate_privilege' E estate_privileges Z
 // 政府改革の進捗に指定の数だけ加算する
 | 'change_government_reform_progress' E integer
 // 指定の割合だけ軍熟練度を加算する
@@ -189,17 +233,25 @@ country_effect
 // 指定の国家フラグをONにする
 | 'set_country_flag' E key
 // 指定の中核州を得る
-| 'add_core' E positive_integer
+| 'add_core' E (positive_integer|ROOT|country_tags)
 // 陸軍伝統を得る
 | 'add_army_tradition' E integer
 // 指定の対象に対して指定の評価補正を与える。yearsがある場合はその期間のみ
-| 'add_opinion' E A 'who' E (ROOT|TAG) 'modifier' ('years' E positive_integer)?  E key Z
+| 'add_opinion' E A 'who' E (ROOT|country_tags) 'modifier' ('years' E positive_integer)?  E key Z
 // 指定の対象から指定の評価を受ける。yearsがある場合はその期間のみ
-| 'reverse_add_opinion' E A 'who' E (ROOT|TAG) 'modifier' ('years' E positive_integer)?  E key Z
+| 'reverse_add_opinion' E A 'who' E (ROOT|country_tags) 'modifier' ('years' E positive_integer)?  E key Z
 // 教皇への影響力を指定の値だけ加算する
 | 'add_papal_influence' E integer
 // 行動による正統性の値に対する影響を小さくする
 | 'increase_legitimacy_small_effect' E BOOL
+// 指定の征服者を用意する
+| 'define_conquistador' E A (
+    ('name' E key)
+    |('shock' E positive_integer)
+    |('fire' E positive_integer)
+    |('manuever' E positive_integer)
+    |('siege' E positive_integer)
+    |('trait' E general_traits))+ Z
 // 指定の規格の将軍を用意する
 | 'define_general' E A (
     ('name' E key)
@@ -207,9 +259,17 @@ country_effect
     |('fire' E positive_integer)
     |('manuever' E positive_integer)
     |('siege' E positive_integer)
-    |('trait' E key))+ Z
+    |('trait' E general_traits))+ Z
 // 指定の規格の相当する将軍を用意する
 | 'create_general' E A (
+    ('tradition' E positive_integer)
+    |('add_fire' E positive_integer)
+    |('add_shock' E positive_integer)
+    |('add_manuever' E positive_integer)
+    |('add_siege' E positive_integer)
+    |('culture' E cultures))+ Z
+// 指定の規格の相当する将軍を用意する
+| 'create_admiral ' E A (
     ('tradition' E positive_integer)
     |('add_fire' E positive_integer)
     |('add_shock' E positive_integer)
@@ -219,7 +279,7 @@ country_effect
 // 重商主義の値を加算する
 | 'add_mercantilism' E integer
 // 指定の対象に対する指定のCBを指定の期間だけ得る
-| 'add_casus_belli' E A ('type' E cb_types)? ('months' E positive_integer)? 'target' E TAG ('type' E cb_types)? Z
+| 'add_casus_belli' E A ('type' E cb_types)? ('months' E positive_integer)? 'target' E (country_tags|ROOT) ('type' E cb_types)? Z
 // 指定の％だけ年間の水兵増加量が増える
 | 'add_yearly_sailors' E integer
 // 指定の％だけ年間の人的資源増加量が増える
@@ -231,10 +291,20 @@ country_effect
     |('skill' E positive_integer)
     |('location' E positive_integer) // プロビンス番号
     |('discount' E BOOL)
-    |('culture' E cultures)
+    |('culture' E (cultures|ROOT))
     |('cost_multiplier' E percentage_range_0_inf)
     |('female' E BOOL)
-    |('religion' E (religions|ROOT|TAG)))+ Z
+    |('religion' E (religions|ROOT|country_tags)))+ Z
+// 指定の規格の提督を用意する
+| 'define_admiral' E A (
+    ('name' E WRAP_STRING)
+    |('female' E BOOL)
+    |('trait' E admiral_traits)
+    |('shock' E positive_integer)
+    |('fire' E positive_integer)
+    |('manuever' E positive_integer)
+    |('siege' E positive_integer)
+    |('religion' E (religions|ROOT|country_tags)))+ Z
 // 指定の傭兵を解禁する
 | 'unlock_merc_company' E A 'merc_company' E key Z
 // 指定された期間における指定された州の生産所得に基づいて、現在のスコープの即時ダカットを付与する
@@ -248,20 +318,34 @@ country_effect
 // 改革進捗エフェクトを加える
 | 'add_reform_progress_medium_effect' E BOOL
 // 指定のレベルの探検家を作成する
-| 'create_explorer' E A 'tradition' E positive_integer Z
-//////////////////////////////////////////////////
+| 'create_explorer' E A (('tradition' E positive_integer)|('culture' E cultures))+ Z
+// 指定のレベルの征服者を作成する
+| 'create_conquistador' E A (('tradition' E positive_integer)|('culture' E cultures))+ Z
+| country_effect_scope
+////////////////////////////////////////////////////
+| 'if' E A c_limit country_effect* Z ('else_if' E A c_limit country_effect* Z)* ('else' E A country_effect* Z)?
+| 'AND' E A country_effect* Z
+| 'NOT' E A country_effect* Z
+| 'OR' E A country_effect* Z
+// 指定の条件に合うものが合計数以上
+| 'calc_true_if' E A country_effect* 'amount' E positive_integer country_effect* Z ('else' E A country_effect* Z)?
+//| key (E|'<'|'>'|'<='|'>=') (primitive|(A country_effect* Z))
+//| primitive
+;
+
+country_effect_scope
 // エリアの各プロビンスにスコープする　[OPTION] すべて もしくは いずれか１つ以上
-| areas E A ('limit' E A province_trigger* Z)? province_effect* Z
+: areas E A ('limit' E A province_trigger* Z)? province_effect* Z
 // リージョンの各プロビンスにスコープする　[OPTION] すべて もしくは いずれか１つ以上
 | regions E A ('limit' E A province_trigger* Z)? province_effect* Z
 // プロビンスにスコープする
 | positive_integer E A province_effect* Z
-| (ROOT|TAG) E A country_effect* Z
+| (ROOT|country_tags) E A country_effect* Z
 // すべての属国にスコープする
 | 'every_subject_country' E A c_limit country_effect* Z
 // 首都にスコープする
 | 'capital_scope' E A province_effect* Z
-| 'random_owned_province' E A c_limit? province_effect* Z
+| 'random_owned_province' E A p_limit? province_effect* Z
 // 条件に合う全てのプロビンスにスコープする
 | 'every_province' E A p_limit? province_effect* Z
 | 'every_country' E A c_limit? country_effect* Z
@@ -274,15 +358,10 @@ country_effect
 // イベントトリガにスコープする
 | EVENT_TARGET E A country_effect? province_effect? Z
 | 'every_known_country' E A c_limit? country_effect* Z
-////////////////////////////////////////////////////
-| 'if' E A c_limit country_effect* Z ('else_if' E A c_limit country_effect* Z)* ('else' E A country_effect* Z)?
-| 'AND' E A country_effect* Z
-| 'NOT' E A country_effect* Z
-| 'OR' E A country_effect* Z
-// 指定の条件に合うものが合計数以上
-| 'calc_true_if' E A country_effect* 'amount' E positive_integer country_effect* Z ('else' E A country_effect* Z)?
-//| key (E|'<'|'>'|'<='|'>=') (primitive|(A country_effect* Z))
-//| primitive
+// HRE皇帝にスコープする
+| EMPEROR E A c_limit? country_effect* Z
+// 現在のcountryスコープの宗主国である国 (存在する場合) を参照します。
+| 'overlord' E A country_effect* Z
 ;
 
 country_trigger:
@@ -291,6 +370,128 @@ country_trigger:
 // 条件に合えば指定のツールチップを表示する
 | 'custom_trigger_tooltip' E A 'tooltip' E key country_trigger* Z
 /////////////////////////////////////////////////////
+// 総主教の権威が指定の値以上
+| 'patriarch_authority' E percentage_range_0_1
+// 現在のイコンが指定のものである
+| 'current_icon' E icons
+// 革命熱が指定の値
+| 'revolutionary_zeal' E percentage_range_0_inf
+// ?
+| 'same_govt_as_root_trigger' E BOOL
+// religious_scholars_trigger がある
+| 'has_religious_scholars_trigger' E BOOL
+// final_tier_reforms_triggerを持っている
+| 'has_final_tier_reforms_trigger' E BOOL
+// 独立国または朝貢国であるかどうか
+| 'is_free_or_tributary_trigger' E BOOL
+// エンドゲームタグを一度も発火させていない
+| 'was_never_end_game_tag_trigger' E BOOL
+// ？
+| 'valid_for_personal_unions_trigger' E BOOL
+// 司教顧問会への国庫負担額が指定の値
+| 'curia_treasury_contribution' E percentage_range_0_inf
+// 提督の数が指定以上
+| 'num_of_admirals' E positive_integer
+// 自身が対象の同君上位国である場合はTrue
+| 'senior_union_with' E (country_tags|ROOT)
+// 国Xが交易品Zの量Yを生産している場合、trueを返します。
+| 'trade_goods_produced_amount' E A 'trade_goods' E trade_goods 'amount' E positive_integer Z
+// 黄金時代中であるかどうか
+| 'in_golden_age' E BOOL
+// 黄金時代を経験済みかどうか
+| 'has_had_golden_age' E BOOL
+// 反乱軍に占拠された州の数が指定以上
+| 'num_of_rebel_controlled_provinces' E positive_integer
+// 国にX以上の要求強度を持つ相続人がいる場合はtrueを返します。
+| 'heir_claim' E positive_integer
+// 指定の政府属性がある
+| 'has_government_attribute' E key
+// 戦争疲弊が指定の値以上
+| 'war_exhaustion' E positive_integer
+// 国が国Xの同君連合の下位国である場合はtrueを返します。
+| 'junior_union_with' E (ROOT|country_tags)
+// 指定のグローバルフラグがあった
+| 'had_global_flag' E A 'flag' E key 'days' E positive_integer Z
+// HREの宗教が指定の国家のものである、もしくは指定のものである
+| 'hre_religion' E (ROOT|country_tags|religions)
+// 宗教リーグのリーダーである
+| 'is_league_leader' E BOOL
+// 指定の国家に隣接している
+| 'is_neighbor_of' E (ROOT|country_tags)
+// 指定された制度が検出された場合はtrueを返します。
+| 'is_institution_enabled' E institutions
+// 国がXと休戦している場合はtrueを返します。
+| 'truce_with' E (country_tags|ROOT)
+// いずれかの国難がある
+| 'has_any_disaster' E BOOL
+// 国に指定された宗教学校がある場合、trueを返します。
+| 'religious_school' E A 'group' E religion_groups 'school' E religious_schools Z
+// 指定された修飾子の値が国のX以上の場合にtrueを返します。
+| 'has_global_modifier_value' E A 'which' E key 'value' E percentage_range_0_inf ('extra_shortcut' E BOOL)? Z
+// 国の主要な宗教がXの場合、trueを返します
+| 'dominant_religion' E religions
+// 国が指定された階級にX以上の権限を付与している場合はtrueを返します。
+| 'num_of_estate_privileges' E A 'estate' E estates 'value' E positive_integer Z
+// 国の強力な順位が2以上の場合、trueを返します。
+| 'great_power_rank' E positive_integer
+// スコープされる国が (国と比較して) 少なくともXテクノロジー進んでいる場合、trueを返します。
+| 'tech_difference' E integer
+// この国家が指定のTypeの属国であればtrueを返します。
+| 'is_subject_of_type' E subject_types
+// 国が赤字の場合、trueを返します。
+| 'is_in_deficit' E BOOL
+// 国に少なくともX個の砲兵連隊がある場合、trueを返します。
+// 指定された国と同じ数の砲兵連隊がある場合はtrueを返します。
+| 'num_of_artillery' E (positive_integer|country_tags|ROOT)
+// 君主を将軍にしている
+| 'is_monarch_leader' E BOOL
+// 政府改革の進捗が指定以上
+| 'government_reform_progress' E positive_integer
+// 指定の帝国の改革が通過済み
+| 'hre_reform_passed' E hre_reforms
+// 国が対象国の家臣である場合はtrueを返します。
+| 'vassal_of' E (ROOT|country_tags)
+// 選帝侯が指定の数以上
+| 'num_of_electors' E positive_integer
+// 指定の国家補正がある
+| 'has_country_modifier' E key
+// 海に面しているすべてのプロビンス数が指定の国家よりも多いもしくは指定の数よりも多い
+| 'num_of_total_ports' E (positive_integer|country_tags|ROOT)
+// 指定の国が既知の国家である
+| 'knows_country' E country_tags
+// 国でX以上の州に平均的な不穏度がある場合、trueを返します。
+| 'average_unrest' E positive_integer
+// 少なくとも指定されたステータスを持つ指揮官が国に存在する場合、trueを返します。
+// admiral=yesおよびgeneral=yesを使うこともできる。
+| 'has_leader_with'E A (
+    (('admiral'|'general') E BOOL)
+    |('fire' E positive_integer)
+    |('shock' E positive_integer)
+    |('manuever' E positive_integer)
+    |('siege' E positive_integer)
+    |('total_pips' E positive_integer)
+ )+ Z
+// 旗艦が存在する
+| 'has_flagship' E BOOL
+// 海軍の扶養限界が指定以上
+| 'naval_forcelimit' E positive_integer
+// 指定された商品を生産する少なくともXつの州が国にある場合、trueを返します。
+| trade_goods E positive_integer
+// 対象と婚姻を結んでいる
+| 'marriage_with' E (ROOT|country_tags)
+// 指定の危機が発生済み
+| 'is_incident_happened' E incidents
+// 国の正当性の等価値(正統性、共和主義的伝統、献身、大軍団結、能力主義など。)がX以上の場合、trueを返します。
+// 国に指定された国と少なくとも同等の正当性(正統性、共和主義的伝統、献身、大軍団結、能力主義など。)がある場合、trueを返します。
+| 'legitimacy_equivalent' E (positive_integer|country_tags|ROOT)
+// 中華皇帝である
+| 'is_emperor_of_china' E BOOL
+// 信仰の擁護者である
+| 'is_defender_of_faith' E BOOL
+// 信仰が指定以上
+| 'piety' E percentage_range_0_1
+// 国が対象アイデアグループを完了した場合にtrueを返します。
+| 'full_idea_group' E ideas
 // 首都が指定のプロビンスである
 | 'capital' E positive_integer
 // 総収入に対する貿易収入の比率がX以上の場合、trueを返します
@@ -303,9 +504,9 @@ country_trigger:
 | 'num_of_merchants' E positive_integer
 // 国の地方の基本税の合計が指定数以上の場合、trueを返します。
 // 国の基本税の合計が指定された国の基本税以上である場合にtrueを返します。
-| 'total_base_tax' E (positive_integer|TAG|ROOT)
+| 'total_base_tax' E (positive_integer|country_tags|ROOT)
 // 国が指定国もしくはスコープと同じ貿易同盟のメンバーである場合、trueを返します。
-| 'is_in_trade_league_with' E (TAG|ROOT)
+| 'is_in_trade_league_with' E (country_tags|ROOT)
 // 指定のグローバルフラグが存在する
 | 'has_global_flag' E key
 // 指定された変数が指定数以上の場合はtrueを返します。
@@ -318,17 +519,17 @@ country_trigger:
 | 'num_of_trusted_allies' E positive_integer
 // 国が指定の数以上の国から戦争賠償を受け取った場合、trueを返します。
 // 指定された国と同じ数の国から戦争賠償を受け取った場合、trueを返します。
-| 'num_of_war_reparations' E (ROOT|TAG|positive_integer)
+| 'num_of_war_reparations' E (ROOT|country_tags|positive_integer)
 // 技術グループが指定のものである
 | 'technology_group' E technology_groups
 // 植民者が指定の数以上である
 | 'num_of_colonists' E positive_integer
 // 国が指定された国に対して平和条約（首都の収奪）を使用した場合、trueを返します
-| 'has_pillaged_capital_against' E (ROOT|TAG)
+| 'has_pillaged_capital_against' E (ROOT|country_tags)
 // 国が対象の宗主国である場合にtrueを返します
-| 'overlord_of' E (ROOT|TAG)
+| 'overlord_of' E (ROOT|country_tags)
 // 王朝が指定の王朝と同じもしくは指定のものである
-| 'dynasty' E (ROOT|TAG|key)
+| 'dynasty' E (ROOT|country_tags|key)
 // ?
 | 'share_of_starting_income' E percentage_range_0_inf
 // 指定されたイベントターゲットが保存されている場合はtrueを返します
@@ -350,9 +551,9 @@ country_trigger:
 // 指定のプロビンスが自国もしくは属国によって保有されている
 | 'owns_or_non_sovereign_subject_of' E positive_integer
 // 指定の国家と同盟しているかどうか
-| 'alliance_with' E (TAG|ROOT)
+| 'alliance_with' E (country_tags|ROOT)
 // 数値以上の連隊もしくは対象国以上の連隊を保有しているかどうか
-| 'army_size' E (TAG|positive_integer|ROOT)
+| 'army_size' E (country_tags|positive_integer|ROOT)
 // 統治技術が数値以上かどうか
 | 'adm_tech' E positive_integer
 //指定の文化を受容しているかどうか
@@ -368,18 +569,18 @@ country_trigger:
 // ランダム新世界機能を使っているかどうか
 | 'map_setup' E key
 // 指定の国家かどうか
-| 'tag' E (key|TAG|ROOT)
+| 'tag' E (key|country_tags|ROOT)
 // 国家ランクが指定以上かどうか
 | 'government_rank' E (INT_1|INT_2|INT_3)
 // 対象が現時点で存在しているかどうかもしくはスコープが存在しているかどうか
-| 'exists' E (TAG|BOOL)
+| 'exists' E (country_tags|BOOL)
 // 戦争中かどうか
 | 'is_at_war' E BOOL
 // 対象がライバルかどうか
-| 'is_rival' E (ROOT|TAG)
+| 'is_rival' E (ROOT|country_tags)
 // 対象の国からライバル視されているかどうか
-| 'is_enemy' E (ROOT|TAG)
-| 'is_subject_of' E (TAG|ROOT)
+| 'is_enemy' E (ROOT|country_tags)
+| 'is_subject_of' E (country_tags|ROOT)
 // 指定の年代よりも後かどうか
 | 'is_year' E positive_integer
 // 指定の国難が現在発生中かどうか
@@ -391,7 +592,7 @@ country_trigger:
 // 指定の国家フラグが存在するかどうか
 | 'has_country_flag' E key
 // 指定の対象国から指定の数以上の評価をもらっているかどうか
-| 'has_opinion' E A 'who' E (ROOT|TAG) 'value' E integer Z
+| 'has_opinion' E A 'who' E (ROOT|country_tags) 'value' E integer Z
 // 指定の階級が存在しているかどうか
 | 'has_estate' E estates
 // 指定した階級の土地所有が指定以上であるかどうか
@@ -405,7 +606,7 @@ country_trigger:
 // 自国が保有するプロビンスが指定数以上かつ指定の条件かどうか
 | 'num_of_owned_provinces_with' E A province_trigger* 'value' E positive_integer province_trigger* Z
 // 自国とその朝貢国以外の属国の合計開発度が、指定された国家とその非朝貢国以外の属国より多い場合、trueを返します。数値の場合は数値と比較されます
-| 'total_own_and_non_tributary_subject_development' E (TAG|ROOT|positive_integer)
+| 'total_own_and_non_tributary_subject_development' E (country_tags|ROOT|positive_integer)
 // 独立欲求が指定の数以上かどうか
 | 'liberty_desire' E positive_integer
 // HRE皇帝かどうか
@@ -415,7 +616,7 @@ country_trigger:
 // 階級の土地所有における王国シェアが指定％以上かどうか
 | 'crown_land_share' E positive_integer
 // 威信が指定以上かどうか
-| 'prestige' E positive_integer
+| 'prestige' E (country_tags|positive_integer)
 // 陸軍伝統が指定以上かどうか
 | 'army_tradition' E positive_integer
 // 摂政評議会であるかどうか
@@ -438,14 +639,10 @@ country_trigger:
 | 'is_subject' E BOOL
 // 統治者が指定のフラグを有しているかどうか
 | 'has_ruler_flag' E key
-// 独立国または朝貢国であるかどうか
-| 'is_free_or_tributary_trigger' E BOOL
 // 国の政府が遊牧民であるかどうか
 | 'is_nomad' E BOOL
 // ゲームが通常の国または歴史的な国を使用するように設定されているかどうか
 | 'normal_or_historical_nations' E BOOL
-// エンドゲームタグを一度も発火させていない
-| 'was_never_end_game_tag_trigger' E BOOL
 // AIであるかどうか
 | 'ai' E BOOL
 // カスタム国家であるかどうか
@@ -461,7 +658,7 @@ country_trigger:
 // 海軍艦隊数の扶養限界に対する現在の艦隊数の割合が指定以上
 | 'navy_size_percentage' E percentage_range_0_inf
 // 帝国の危機が発生中かどうか
-| 'active_imperial_incident' E ('any'|'all')
+| 'active_imperial_incident' E ALL_ANY
 // 女性後継者であるかどうか
 | 'has_female_heir' E BOOL
 // 国家フラグが有効になってから指定の日数が経過したかどうか
@@ -474,6 +671,8 @@ country_trigger:
 | 'controls' E positive_integer
 // 海に面している
 | 'has_port' E BOOL
+// 月間の軍事点収入が指定数以上
+| 'monthly_mil' E integer
 // 月間の外交点収入が指定数以上
 | 'monthly_dip' E integer
 // 月間の統治点収入が指定数以上
@@ -485,11 +684,11 @@ country_trigger:
 // 軍熟練度が指定の割合以上である
 | 'army_professionalism' E percentage_range_0_1
 // 軍事技術が指定以上
-| 'mil_tech' E integer
+| 'mil_tech' E (integer|ROOT)
 // 軍事点が指定の数以上保有している
-| 'mil_power' E integer
+| 'mil_power' E (integer|ROOT)
 // 外交点が指定の数以上保有している
-| 'dip_power' E integer
+| 'dip_power' E (integer|ROOT)
 // 陸軍連隊数の扶養限界に対する現在の連隊の割合が指定以上
 | 'army_size_percentage' E percentage_range_0_inf
 // 将軍の数が指定以上
@@ -505,15 +704,15 @@ country_trigger:
 // 指定の種類の顧問を雇用している
 | 'advisor' E key
 // 国教が指定の宗教グループであるもしくは指定の国家と同じである
-| 'religion_group' E (ROOT|TAG|religion_groups)
-// 安定度が数値以上である
-| 'stability' E (MINT_3|MINT_2|MINT_1|INT_0|INT_1|INT_2|INT_3)
+| 'religion_group' E (ROOT|country_tags|religion_groups)
+// 安定度が数値以上である,指定の国家以上である
+| 'stability' E (MINT_3|MINT_2|MINT_1|INT_0|INT_1|INT_2|INT_3|country_tags)
 // 政府改革レベルが指定以上
 | 'reform_level' E (INT_0|INT_1|INT_2|INT_3|INT_4|INT_5|INT_6)
 // 指定の政府改革がある
 | 'has_reform' E key
 // 指定の階級特権が選択肢にある
-| 'has_estate_privilege' E estates
+| 'has_estate_privilege' E estate_privileges
 // 絶対主義が数値以上
 | 'absolutism' E positive_integer
 // 指定の州が中核州である
@@ -523,7 +722,7 @@ country_trigger:
 // 人的資源の回復率が指定以上
 | 'manpower_percentage' E percentage_range_0_inf
 // 指定の国家よりも指定の割合だけ強力である（連隊数と軍事技術が関係？）
-| 'army_strength' E A 'who' E (ROOT|TAG) 'value' E percentage_range_0_inf Z
+| 'army_strength' E A 'who' E (ROOT|country_tags) 'value' E percentage_range_0_inf Z
 // ランダム新世界が有効になっているかどうか
 | 'is_random_new_world' E BOOL
 // 指定の国家の植民国家であるかどうか
@@ -541,11 +740,11 @@ country_trigger:
 // 開発度合計値の増加分が指定の値を超えた
 | 'grown_by_development' E positive_integer
 // 指定の国から禁輸されている
-| 'trade_embargoing' E TAG
+| 'trade_embargoing' E country_tags
 // 総開発値が指定の値を超えているもしくは指定の国家を上回っている
-| 'total_development' E (TAG|ROOT|positive_integer)
+| 'total_development' E (country_tags|ROOT|positive_integer)
 // 対象に勝ってから最大で指定の期間まで真になる
-| 'has_won_war_against' E A 'who' E (ROOT|TAG) 'max_years_since' E positive_integer Z
+| 'has_won_war_against' E A 'who' E (ROOT|country_tags) 'max_years_since' E positive_integer Z
 // 国が戦争状態にあり、前述の条件が満たされている場合は真になる
 // attacker_leader : 攻撃側主導国が指定の国家
 // defender_leader : 防衛側主導国が指定の国家
@@ -556,12 +755,10 @@ country_trigger:
 | 'current_age' E ages
 // 指定の制度以上になった
 | 'has_institution' E institutions
-// ？
-| 'valid_for_personal_unions_trigger' E BOOL
 // 指定のミッションを完了済み
 | 'mission_completed' E key
 // 対象よりも多い艦隊数を有しているもしくは指定の数よりも多い艦隊数を有している
-| 'navy_size' E (ROOT|TAG|positive_integer)
+| 'navy_size' E (ROOT|country_tags|positive_integer)
 // 革命国家である
 | 'is_revolutionary' E BOOL
 // （指定のレベルの）軍事顧問が存在する
@@ -571,13 +768,13 @@ country_trigger:
 // （指定のレベルの）外交顧問が存在する
 | ('has_dip_advisor'|'has_dip_advisor_1'|'has_dip_advisor_2'|'has_dip_advisor_3'|'has_dip_advisor_4'|'has_dip_advisor_5') E BOOL
 // 指定の数以上の同盟を結んでいるもしくは指定の国家が結んでいる同盟以上の同盟を結んでいる
-| 'num_of_allies' E (positive_integer|TAG|ROOT)
+| 'num_of_allies' E (positive_integer|country_tags|ROOT)
 // 汚職が数値以上かどうか
 | 'corruption' E percentage_range_0_inf
 // 騎兵の数が指定以上
 | 'num_of_cavalry' E positive_integer
 // 対象の国家と戦争中である
-| 'war_with' E (ROOT|TAG)
+| 'war_with' E (ROOT|country_tags)
 // 属国の数が指定以上
 | 'num_of_subjects' E positive_integer
 // 開放されたカルトの数が数値以上
@@ -590,19 +787,32 @@ country_trigger:
 | 'production_leader' E A 'trade_goods' E trade_goods Z
 // 対象の生産品のボーナスを受け取っているかどうか
 | 'trading_bonus' E A 'trade_goods' E trade_goods 'value' E BOOL Z
-///////////////////////////////////////////////////
+| country_trigger_scope
+//////////////////////////////////////////////////
+| 'if' E A c_limit country_trigger* Z ('else_if' E A c_limit country_trigger* Z)* ('else' E A country_trigger* Z)?
+| 'AND' E A country_trigger* Z
+| 'NOT' E A country_trigger* Z
+| 'OR' E A country_trigger* Z
+// 指定の条件に合うものが合計数以上
+| 'calc_true_if' E A country_trigger* 'amount' E positive_integer country_trigger* Z ('else' E A country_trigger* Z)? ;
+
+country_trigger_scope
 // プロビンスにスコープにする
-| positive_integer E A province_trigger* Z
+: positive_integer E A province_trigger* Z
 // エリアの各プロビンスにスコープにする
-| areas E A province_trigger* ('type' E ('all'|'any'))? province_trigger* Z
+| areas E A province_trigger* ('type' E ALL_ANY)? province_trigger* Z
 // 植民地域の各プロビンスにスコープにする
-| COLONIAL_X E A province_trigger* ('type' E ('all'|'any'))? province_trigger* Z
+| colonials E A province_trigger* ('type' E ALL_ANY)? province_trigger* Z
 // リージョンにスコープにする
-| religions E A ('type' E ('all'|'any'))? province_trigger* ('type' E ('all'|'any'))? Z
+| regions E A ('type' E ALL_ANY)? province_trigger* ('type' E ALL_ANY)? Z
+// スーパーリージョンの各プロビンス
+| super_regions E A ('type' E ALL_ANY)? province_trigger* ('type' E ALL_ANY)? Z
+// 貿易会社リージョンの各プロビンスにスコープ
+| trade_company_regions E A province_trigger* Z
 // 任意の属国にスコープする
 | 'any_subject_country' E A country_trigger* Z
 // 対象国もしくは自国にスコープする
-| (ROOT|TAG) E A country_trigger* Z
+| (ROOT|country_tags) E A country_trigger* Z
 // すべての国家にスコープする
 | 'all_country' E A country_trigger* Z
 // 条件を満たす任意の国家にスコープする
@@ -616,7 +826,7 @@ country_trigger:
 // すべての選帝侯にスコープする
 | 'all_elector' E A country_trigger* Z
 // HRE皇帝にスコープする
-| 'emperor' E A country_trigger* Z
+| EMPEROR E A country_trigger* Z
 // 保有している州かつ条件にあう州にスコープする
 | 'any_owned_province' E A province_trigger* Z
 // すべての所有している州にスコープする
@@ -629,24 +839,46 @@ country_trigger:
 | 'all_province' E A province_trigger* Z
 // いずれかの既知の国家にスコープする
 | 'any_known_country' E A country_trigger* Z
-// スーパーリージョンの各プロビンス
-| super_regions E A ('type' E ('all'|'any'))? province_trigger* ('type' E ('all'|'any'))? Z
 // 現在のスコープのメイン取引ポートを含む取引ノードにスコープする
 | 'home_trade_node' E A province_trigger* Z
 // すべての交易ノードにスコープする
 | 'all_trade_node' E A province_trigger* Z
-//////////////////////////////////////////////////
-| 'if' E A c_limit country_trigger* Z ('else_if' E A c_limit country_trigger* Z)* ('else' E A country_trigger* Z)?
-| 'AND' E A country_trigger* Z
-| 'NOT' E A country_trigger* Z
-| 'OR' E A country_trigger* Z
-// 指定の条件に合うものが合計数以上
-| 'calc_true_if' E A country_trigger* 'amount' E positive_integer country_trigger* Z ('else' E A country_trigger* Z)? ;
+// いずれかのライバル国家にスコープする
+| 'any_rival_country' E A country_trigger* Z
+// いずれかのプロビンス
+| 'any_province' E A province_trigger* Z
+// いずれかの交易ノード二スコープする
+| 'any_trade_node' E A province_trigger* Z
+// すべての隣接した国家
+| 'all_neighbor_country' E A 'religion' E (ROOT|country_tags) Z
+// 現在のcountryスコープの宗主国である国 (存在する場合) を参照します。
+| 'overlord' E A country_trigger* Z
+// 対象の大陸の各州
+| continents E A ('type' E ALL_ANY)? province_trigger* Z
+;
 
 province_effect
 : 'hidden_effect' E A province_effect* Z
 | 'custom_tooltip' E key
+// 指定の数値の確率でランダム効果を発生させる
+| 'random_list' E A (positive_integer E A province_effect* Z)+  Z
 ////////////////////////////////////////////////////////
+// 繁栄を加算
+| 'add_prosperity' E percentage_range_0_inf
+// ？
+| 'add_loot_from_rich_province_general_effect' E A ('LOOTER'|'looter') E (ROOT|country_tags) Z
+// 対象によって発見される
+| 'discover_country' E ROOT|country_tags
+// 指定の中核州を得る
+| 'add_core' E (positive_integer|ROOT|country_tags)
+// グレートプロジェクトのティアを設定する
+| 'add_great_project_tier' E A 'type' E great_projects 'tier' E positive_integer Z
+// ?
+| 'create_colony_mission_reward_province' E A 'country' E ROOT Z
+// 指定の制度の普及度合いに指定の数値を追加する
+| 'add_institution_embracement' E A 'which' E institutions 'value' E percentage_range_0_inf Z
+// 現在のプロビンススコープのプロビンスイベントを起動します。プロビンススコープの所有者に表示されます。
+| 'province_event' E A (('id' E key)|('days' E positive_integer)|('random' E positive_integer)|('tooltip' E key))+ Z
 // 現在の地域スコープに地域トリガー補正を追加します。
 | 'add_province_triggered_modifier' E key
 // 現在のスコープをキーとして保存します。実行が終了するとクリアされます(すなわちイベントの終了)。
@@ -662,11 +894,11 @@ province_effect
 // 指定の州補正を指定の期間だけ与える。duration -1は永続
 | 'add_province_modifier' E A 'name' E key 'duration' E (positive_integer|MINT_1) Z
 // 指定の交易補正を指定の期間だけ与える。duration -1は永続
-| 'add_trade_modifier' E A 'who' E (ROOT|TAG) 'duration' E (positive_integer|MINT_1) 'power' E integer 'key' E key Z
+| 'add_trade_modifier' E A 'who' E (ROOT|country_tags) 'duration' E (positive_integer|MINT_1) 'power' E integer 'key' E key Z
 // 指定の国家と同じ文化に変更するもしくは指定の文化に変更する
-| 'change_culture' E (ROOT|TAG|cultures)
+| 'change_culture' E (ROOT|country_tags|cultures)
 // 指定の国家と同じ宗教に変更するもしくは指定の宗教に変更する
-| 'change_religion' E (ROOT|TAG|religions)
+| 'change_religion' E (ROOT|country_tags|religions)
 // HREに追加する
 | 'set_in_empire' E BOOL
 // 指定の建物を追加する
@@ -678,9 +910,9 @@ province_effect
 // 指定の建物を削除する
 | 'remove_building' E key
 // 指定の数のユニットの作成を開始する。スピードとコストは基本値に対する割合。
-| 'add_unit_construction' E A 'type' E key 'amount' E integer 'speed' E integer 'cost' E integer  Z
+| 'add_unit_construction' E A 'type' E key 'amount' E integer 'speed' E percentage_range_0_inf 'cost' E integer  Z
 // 対象の国家が請求権を得る
-| 'add_claim' E (ROOT|TAG)
+| 'add_claim' E (ROOT|country_tags)
 // CoTのレベルを上げる
 | 'add_center_of_trade_level' E integer
 // 指定の反乱軍を指定の規模で発生させる
@@ -697,7 +929,7 @@ province_effect
 | 'add_nationalism' E integer
 ////////////////////////////////////////////////
 | ROOT E A country_effect* Z
-| TAG E A country_effect* Z
+| country_tags E A country_effect* Z
 | religions E A ('limit' E A province_trigger* Z)? province_effect* Z
 | 'owner' E A country_effect* Z
 // エリアの各プロビンスにスコープする
@@ -719,10 +951,62 @@ province_trigger
 // 条件に合えば指定のツールチップを表示する
 : 'custom_trigger_tooltip' E A 'tooltip' E key province_trigger* Z
 //////////////////////////////////////////////////
+// 国にX人以上の傭兵がいる場合はtrueを返します。
+| 'num_of_mercenaries' E positive_integer
+// forcelimit_building_triggerがある
+| 'has_forcelimit_building_trigger' E BOOL
+// 繁栄が指定の値以上
+| 'prosperity' E percentage_range_0_inf
+// manpower_building_triggerがある
+| 'has_manpower_building_trigger' E BOOL
+// 自治率
+| 'local_autonomy' E percentage_range_0_1
+// courthouse_building_triggerがある
+| 'has_courthouse_building_trigger' E BOOL
+// 州が交易会社に属している場合はtrueを返します。
+| 'is_owned_by_trade_company' E BOOL
+// 改革の中心である
+| 'is_reformation_center' E BOOL
+// 首都があるエリアにある
+| 'is_in_capital_area' E BOOL
+// 指定の制度が指定の普及率になっている
+| institutions E positive_integer
+// ヨーロッパの交易ノード州である
+| 'is_european_trade_node_province' E BOOL
+// production_building_triggerがある
+| 'has_production_building_trigger' E BOOL
+// tax_building_triggerがある
+| 'has_tax_building_trigger' E BOOL
+// 国に指定されたグレートプロジェクトが指定されたレベルにある場合はtrueを返します
+| 'has_great_project' E A 'type' E great_projects 'tier' E positive_integer Z
+// ステートである
+| 'is_state' E BOOL
+// 指定の制度の普及度合いが指定の数値以上
+| 'provincial_institution_progress' E A 'which' E institutions 'value' E positive_integer Z
+// ランダム新世界が有効になっているかどうか
+| 'is_random_new_world' E BOOL
+// 海プロビンスである
+| 'is_sea' E BOOL
+// 指定の貿易会社リージョンである
+| 'trade_company_region' E trade_company_regions
+// tradeノードが世界で最も高い値を持つtradeノードである場合、trueを返します。この値は、総貿易額から輸出貿易額を差し引いて計算されます。
+| 'highest_value_trade_node' E BOOL
+// 指定の州フラグがある
+| 'has_province_flag' E key
+// 植民州である
+| 'is_colony' E BOOL
+// 指定の交易品である
+| 'trade_goods' E trade_goods
+// manufactory_triggerがある
+| 'has_manufactory_trigger' E BOOL
+// 宗教グループが指定のもの
+| 'religion_group' E religion_groups
+// 地域の開発が現在の所有者によってX回以上改良された場合にtrueを返します。
+| 'num_of_times_improved_by_owner' E integer
 // shipyard_building_triggerを持っている
 | 'has_shipyard_building_trigger' E BOOL
 // 国が交易ノードでの非公開化によって少なくともXの取引権限を持つ場合、trueを返します。
-| 'privateer_power' E A 'country' E (TAG|ROOT) 'share' E positive_integer Z
+| 'privateer_power' E A 'country' E (country_tags|ROOT) 'share' E positive_integer Z
 // この州に存在する建物の数が指定数以上
 | 'num_of_buildings_in_province' E positive_integer
 // 対象のDLCを保有しているかどうか
@@ -741,23 +1025,23 @@ province_trigger
 | 'area' E areas
 | 'is_claim' E ROOT
 // 対象の国家もしくは自国がこの州を保有しているかどうか
-| 'owned_by' E (ROOT|TAG)
+| 'owned_by' E (ROOT|country_tags|EMPEROR)
 // 対象のプロビンスであるかどうか
 | 'province_id' E positive_integer
 | 'trade_share' E A 'country' E ROOT 'share' E positive_integer Z
 // 指定の国家の交易力が最大であるかどうか
 | 'is_strongest_trade_power' E ROOT
 // 対象の国家にとって中核州であるかどうか
-| 'is_core' E (ROOT|TAG)
+| 'is_core' E (ROOT|country_tags)
 | 'is_state_core' E ROOT
 // 州が指定された国の首都である場合はtrueを返します
 | 'is_capital_of' E ROOT
 // 首都であるかどうか
 | 'is_capital' E BOOL
 // 対象の国家が現存しているかどうか
-| 'exists' E TAG
+| 'exists' E country_tags
 // 州が指定された国またはその朝貢国以外の属国の一部である場合はtrueを返します
-| 'country_or_non_sovereign_subject_holds' E (ROOT|TAG)
+| 'country_or_non_sovereign_subject_holds' E (ROOT|country_tags)
 // CoTがある場合にそのレベルが指定以上かどうか
 | 'province_has_center_of_trade_of_level' E positive_integer
 // 指定の建物が建っているかどうか
@@ -766,11 +1050,11 @@ province_trigger
 // 建物の空きスロットが指定数以上かどうか
 | 'num_free_building_slots' E positive_integer
 // 対象の国家によって支配されている
-| 'controlled_by' E (ROOT|TAG)
+| 'controlled_by' E (ROOT|country_tags)
 // 指定の州補正が存在する
 | 'has_province_modifier' E key
 // 指定の国家によって発見済みかどうか
-| 'has_discovered' E (ROOT|TAG)
+| 'has_discovered' E (ROOT|country_tags|BOOL)
 // 対象の国家が永続請求権を所有しているかどうか
 | 'is_permanent_claim' E ROOT
 // 国教が指定のものかどうかもしくは指定の国家と同じかどうか
@@ -784,7 +1068,7 @@ province_trigger
 // 港建設トリガーがある
 | 'has_dock_building_trigger' E BOOL
 // 指定の植民地域である
-| 'colonial_region' E key
+| 'colonial_region' E colonials
 // 海に面している
 | 'has_port' E BOOL
 // 要塞レベルが指定以上
@@ -802,21 +1086,12 @@ province_trigger
 // 荒廃度が指定の値以上である
 | 'devastation' E positive_integer
 // 対象が自身の一部もしくは属国である
-| 'country_or_subject_holds' E (ROOT|TAG)
+| 'country_or_subject_holds' E (ROOT|country_tags)
 // スーパーリージョンが指定の地域である
 | 'superregion' E super_regions
 // 州の交易ノードがtrade company領域にある場合、trueを返します。
 | 'is_node_in_trade_company_region' E BOOL
-////////////////////////////////////////////////
-// 対象国へスコープ変更move_capital_effect
-| (ROOT|TAG) E A country_trigger* Z
-| 'owner' E A country_trigger* Z
-| 'region_for_scope_province' E A ('type' E ('all'|'any'))? province_trigger* ('type' E ('all'|'any'))? Z
-| 'all_trade_node_member_province' E A province_trigger* Z
-// 現在のスコープと国教を接するいずれか1つの州にスコープする
-| 'any_neighbor_province' E A province_trigger* Z
-// 指定の水面エリアに面している
-| 'sea_zone' E A province_trigger* Z
+| province_trigger_scope
 ////////////////////////////////////////////////
 | 'OR' E A province_trigger* Z
 | 'NOT' E A province_trigger* Z
@@ -826,8 +1101,25 @@ province_trigger
 | 'calc_true_if' E A province_trigger* 'amount' E positive_integer province_trigger* Z ('else' E A province_trigger* Z)?
 ;
 
+province_trigger_scope
+// 対象国へスコープ変更move_capital_effect
+: (ROOT|country_tags) E A country_trigger* Z
+| areas E A ('type' E ALL_ANY)? province_trigger* ('type' E ALL_ANY)? Z
+| positive_integer E A province_trigger* Z
+| 'owner' E A country_trigger* Z
+| 'region_for_scope_province' E A ('type' E ALL_ANY)? province_trigger* ('type' E ALL_ANY)? Z
+| 'all_trade_node_member_province' E A province_trigger* Z
+// 現在のスコープと国教を接するいずれか1つの州にスコープする
+| 'any_neighbor_province' E A province_trigger* Z
+// 指定の水面エリアに面している
+| 'sea_zone' E A province_trigger* Z
+| 'any_country' E A country_trigger* Z
+// HRE皇帝にスコープする
+| EMPEROR E A c_limit? country_trigger* Z
+;
+
 primitive
-: DATE_TIME
+: DATETIME
 | FLOAT
 | MINT
 | INT
@@ -837,7 +1129,7 @@ primitive
 | ROOT
 | WRAP_STRING;
 
-key: (WRAP_STRING|DATE_TIME|BASE|COLONIAL_X);
+key: (WRAP_STRING|DATETIME|BASE);
 integer: MINT|MINT_3|MINT_2|MINT_1|INT_0|INT_1|INT_2|INT_3|INT_4|INT_5|INT_6|INT; // 整数
 point_number: integer|FLOAT|FLOAT_0_1|MFLOAT;
 positive_integer: INT_0|INT_1|INT_2|INT_3|INT_4|INT_5|INT_6|INT; // 正の整数
@@ -849,6 +1141,480 @@ c_limit: 'limit' E A country_trigger* Z;
 p_limit: 'limit' E A province_trigger* Z;
 
 ////////////////////////////////////////////////////
+
+icons
+:'icon_michael'
+|'icon_eleusa'
+|'icon_pancreator'
+|'icon_nicholas'
+|'icon_climacus';
+
+estate_privileges
+: 'estate_brahmins_land_rights'
+| 'estate_nobles_land_rights'
+| 'estate_church_land_rights'
+| 'estate_maratha_land_rights'
+| 'estate_burghers_land_rights'
+| 'estate_vaisyas_land_rights'
+| 'estate_cossacks_land_rights'
+| 'estate_nomadic_tribes_land_rights'
+| 'estate_dhimmi_land_rights'
+| 'estate_jains_land_rights'
+| 'estate_rajput_land_rights'
+| 'estate_nobles_nobility_primacy'
+| 'estate_nobles_officer_corp'
+| 'estate_nobles_levies'
+| 'estate_nobles_advisors'
+| 'estate_nobles_right_of_counsel'
+| 'estate_nobles_french_strong_duchies'
+| 'estate_church_religious_state'
+| 'estate_church_independent_inquisition'
+| 'estate_church_new_world_mission'
+| 'estate_church_papal_emissary'
+| 'estate_church_clerical_ministers'
+| 'estate_church_clerical_oversight'
+| 'estate_church_inwards_perfection'
+| 'estate_burghers_enforced_interfaith_dialogue'
+| 'estate_church_enforced_one_faith'
+| 'estate_burghers_land_of_commerce'
+| 'estate_burghers_admirals'
+| 'estate_burghers_commercial_board_of_advice'
+| 'estate_burghers_new_world_charter'
+| 'estate_burghers_indebted_to_burghers'
+| 'estate_burghers_free_enterprise'
+| 'estate_cossacks_exploration_expedition'
+| 'estate_cossacks_cossack_self_governance'
+| 'estate_cossacks_establish_the_cossack_regiments'
+| 'estate_cossacks_expand_the_cossack_regiments'
+| 'estate_dhimmi_lighter_dhimmi_taxes'
+| 'estate_dhimmi_dhimmi_nobles'
+| 'estate_dhimmi_manpower'
+| 'estate_dhimmi_tolerance'
+| 'estate_dhimmi_guaranteed_autonomy'
+| 'estate_nomadic_tribes_share_of_the_spoils'
+| 'estate_nomadic_tribes_chieftains_autonomy'
+| 'estate_nomadic_tribes_guaranteed_leadgership_in_host'
+| 'estate_nomadic_tribes_tribal_host'
+| 'estate_brahmins_brahmin_governance'
+| 'estate_brahmins_legitimacy_to_rule'
+| 'estate_brahmins_brahmin_leadership'
+| 'estate_brahmins_flexible_deities'
+| 'estate_brahmins_loyalty_privilege'
+| 'estate_brahmins_guaranteed_autonomy'
+| 'estate_jains_diplomacy'
+| 'estate_jains_clerical_class'
+| 'estate_jains_indebted_to_jains'
+| 'estate_jains_conscientious_objection'
+| 'estate_maratha_military'
+| 'estate_maratha_advisor'
+| 'estate_maratha_loyalty_privilege'
+| 'estate_maratha_levies'
+| 'estate_maratha_levies_for_muslims'
+| 'estate_maratha_special_privilege'
+| 'estate_rajput_rajput_regiments'
+| 'estate_rajput_military'
+| 'estate_rajput_advisor'
+| 'estate_rajput_loyalty_privilege'
+| 'estate_rajput_officer_corp'
+| 'estate_rajput_look_up_purbias'
+| 'estate_vaisyas_loyalty_privilege'
+| 'estate_vaisyas_advisor'
+| 'estate_vaisyas_wartaxes'
+| 'estate_burghers_patronage_of_the_arts'
+| 'estate_vaisyas_patronage_of_the_arts'
+| 'estate_nomadic_tribes_primacy_to_the_bannermen'
+| 'estate_nobles_supremacy_over_crown'
+| 'estate_brahmins_supremacy_over_crown'
+| 'estate_burghers_monopoly_of_textiles'
+| 'estate_burghers_monopoly_of_dyes'
+| 'estate_burghers_monopoly_of_glass'
+| 'estate_burghers_monopoly_of_paper'
+| 'estate_vaisyas_monopoly_of_textiles'
+| 'estate_vaisyas_monopoly_of_dyes'
+| 'estate_vaisyas_monopoly_of_glass'
+| 'estate_vaisyas_monopoly_of_paper'
+| 'estate_jains_monopoly_of_textiles'
+| 'estate_jains_monopoly_of_dyes'
+| 'estate_jains_monopoly_of_glass'
+| 'estate_jains_monopoly_of_paper'
+| 'estate_nobles_monopoly_of_metals'
+| 'estate_nobles_monopoly_of_livestock'
+| 'estate_nobles_monopoly_of_gems'
+| 'estate_rajput_monopoly_of_metals'
+| 'estate_rajput_monopoly_of_livestock'
+| 'estate_rajput_monopoly_of_gems'
+| 'estate_maratha_monopoly_of_metals'
+| 'estate_maratha_monopoly_of_livestock'
+| 'estate_maratha_monopoly_of_gems'
+| 'estate_church_monopoly_of_incense'
+| 'estate_church_monopoly_of_wool'
+| 'estate_church_monopoly_of_wine'
+| 'estate_church_monopoly_of_slaves'
+| 'estate_brahmins_monopoly_of_incense'
+| 'estate_brahmins_monopoly_of_wool'
+| 'estate_cossacks_recruit_cossack_generals'
+| 'estate_cossacks_prime_herding_rights'
+| 'estate_nobles_junker_primacy'
+| 'estate_nobles_strong_duchies'
+| 'estate_maratha_subject_rights'
+| 'estate_rajput_subject_rights'
+| 'estate_nobles_golden_liberty'
+| 'estate_nobles_nieszawa_privileges'
+| 'estate_nobles_pacta_conventa'
+| 'estate_nobles_veto_heir_apparent'
+| 'estate_burghers_the_great_privilege'
+| 'estate_burghers_exclusive_trade_rights'
+| 'estate_vaisyas_exclusive_trade_rights'
+| 'estate_jains_exclusive_trade_rights'
+| 'estate_burghers_control_over_monetary_policy'
+| 'estate_vaisyas_control_over_monetary_policy'
+| 'estate_jains_control_over_monetary_policy'
+| 'estate_burghers_private_trade_fleets'
+| 'estate_vaisyas_private_trade_fleets'
+| 'estate_jains_private_trade_fleets'
+| 'estate_church_for_the_faith'
+| 'estate_brahmins_for_the_faith'
+| 'estate_burghers_prussian_confederation'
+| 'estate_nobles_statutory_rights'
+| 'estate_burghers_statutory_rights'
+| 'estate_church_statutory_rights'
+| 'estate_brahmins_statutory_rights'
+| 'estate_church_brahmins_at_court'
+| 'estate_burghers_khmer_irrigation'
+| 'estate_vaisyas_khmer_irrigation'
+| 'estate_church_karma_temples'
+| 'estate_church_influence_temples'
+| 'estate_burghers_tropical_nation'
+| 'estate_church_lao_animism'
+| 'estate_nobles_command_of_the_military'
+| 'estate_burghers_orang_laut_alliances'
+| 'estate_nobles_better_integration'
+| 'estate_maratha_better_integration'
+| 'estate_rajput_better_integration'
+| 'estate_church_religious_diplomats'
+| 'estate_brahmins_religious_diplomats'
+| 'estate_church_one_faith_one_culture'
+| 'estate_brahmins_one_faith_one_culture'
+| 'estate_nobles_neighbor_raids'
+| 'estate_church_heir_shrine'
+| 'estate_church_embrace_singluar_cult'
+| 'estate_church_flexible_cults'
+| 'estate_church_scholar_connections'
+| 'estate_church_integrated_school'
+| 'estate_burghers_hydraulic_rights'
+| 'estate_nobles_cawa_peace_keepers'
+| 'estate_nobles_cawa_offensive_fighters'
+| 'estate_burghers_control_over_the_mint'
+| 'estate_dhimmi_guarantee_of_traditions'
+| 'estate_dhimmi_grant_liberties'
+| 'estate_jains_grant_liberties'
+| 'estate_church_yakobs_churches'
+| 'estate_nobles_grant_power_to_the_bashorun'
+| 'estate_nobles_decentralized_tribe'
+| 'estate_nobles_tribe_unification'
+| 'estate_nobles_tribe_centralization';
+
+religious_schools
+:'hanafi_school'
+|'hanbali_school'
+|'maliki_school'
+|'shafii_school'
+|'ismaili_school'
+|'jafari_school'
+|'zaidi_school';
+
+great_projects
+: 'kiel_canal'
+| 'suez_canal'
+| 'panama_canal'
+| 'hagia_sophia'
+| 'stonehenge'
+| 'tower_of_london'
+| 'buddha_statues'
+| 'parthenon'
+| 'forbidden_city'
+| 'angkor_wat'
+| 'petra'
+| 'cologne_cathedral'
+| 'kremlin'
+| 'machu_picchu'
+| 'chichen_itza'
+| 'himeji_castle'
+| 'moai'
+| 'stpeters_cathedral'
+| 'mount_fuji'
+| 'tenochtitlan'
+| 'notre_dame_cathedral'
+| 'shwedagon_pagoda'
+| 'the_great_wall_of_china'
+| 'ambras_castle'
+| 'mesa_verde'
+| 'taj_mahal'
+| 'alhambra'
+| 'the_grand_palace'
+| 'bagan_temples'
+| 'ait_benhaddou'
+| 'registan_square'
+| 'golden_temple'
+| 'jokhang_temple'
+| 'borobudur_temple'
+| 'temple_of_confucius'
+| 'murud_janjira'
+| 'pura_besakih'
+| 'kanbawzathadi_palace'
+| 'pyramid_of_cheops'
+| 'khami_ruins'
+| 'prambanan_temple'
+| 'inukshuk'
+| 'fire_temple_of_ateshgah'
+| 'kiev_pechersk_lavra'
+| 'belem_tower'
+| 'sankin_kotai_palaces'
+| 'mausoleum_at_halicarnassus'
+| 'heddal_stave_church'
+| 'versailles'
+| 'el_escorial'
+| 'potosi'
+| 'kaaba'
+| 'holy_city_jerusalem'
+| 'great_mosque_djenne'
+| 'imperial_city_hue'
+| 'baiturrahman_grand_mosque'
+| 'bam_citadel'
+| 'bara_katra'
+| 'bran_castle'
+| 'brandenburg_gate'
+| 'buda_castle'
+| 'cahokia'
+| 'cartagena_de_indias'
+| 'chan_chan_citadel'
+| 'doges_palace'
+| 'duomo_milano'
+| 'dutch_polders'
+| 'ellora_caves'
+| 'erdene_zuu'
+| 'etchimiadzin_cathedral'
+| 'fuerte_del_morro'
+| 'gomateshwara_statue'
+| 'chola_temples'
+| 'gyeongbok_palace'
+| 'hampi'
+| 'prague'
+| 'holy_city_kairouan'
+| 'imam_hussein_al'
+| 'kashi_vishwanath'
+| 'khajuraho'
+| 'kilwa_city'
+| 'krakow_cloth_hall'
+| 'maidan'
+| 'malbork_castle'
+| 'malta_forts'
+| 'mehrangarh_fort'
+| 'nan_madoll'
+| 'porcelain_tower_nanjing'
+| 'qhapaq_nam'
+| 'rila_monasteries'
+| 'churches_lalibela'
+| 'royal_palace_caserta'
+| 'san_antonio_missions'
+| 'sankore_madrasah'
+| 'santa_maria_del_fiore'
+| 'spiral_minaret_samarra'
+| 'sultan_ahmed_mosque'
+| 'sun_temple_konarak'
+| 'swayambhunath'
+| 'white_house'
+| 'tikal'
+| 'tiwanaku'
+| 'tortuga_island'
+| 'ulm_minster_great_project'
+| 'walls_benin'
+| 'winter_palace'
+| 'zacatecas_mine_city';
+
+subject_types
+:'vassal'
+|'march'
+|'daimyo_vassal'
+|'personal_union'
+|'client_vassal'
+|'client_march'
+|'colony'
+|'crown_colony'
+|'private_enterprise'
+|'self_governing_colony'
+|'tributary_state'
+|'default'
+|'dummy';
+
+trade_company_regions
+:'trade_company_west_africa'
+|'trade_company_south_africa'
+|'trade_company_east_africa'
+|'trade_company_west_india'
+|'trade_company_east_india'
+|'trade_company_burma'
+|'trade_company_coromandel'
+|'trade_company_deccan'
+|'trade_company_north_india'
+|'trade_company_indonesia'
+|'trade_company_philippines'
+|'trade_company_moluccas'
+|'trade_company_indochina'
+|'trade_company_south_china'
+|'trade_company_east_china'
+|'trade_company_north_china'
+|'trade_company_north_sea'
+|'trade_company_white_sea'
+|'trade_company_lubeck'
+|'trade_company_baltic_sea'
+|'trade_company_english_channel'
+|'trade_company_bordeaux'
+|'trade_company_sevilla'
+|'trade_company_safi'
+|'trade_company_timbuktu'
+|'trade_company_valencia'
+|'trade_company_champagne'
+|'trade_company_genua'
+|'trade_company_tunis'
+|'trade_company_rheinland'
+|'trade_company_saxony'
+|'trade_company_wien'
+|'trade_company_venice'
+|'trade_company_krakow'
+|'trade_company_pest'
+|'trade_company_ragusa'
+|'trade_company_constantinople'
+|'trade_company_alexandria'
+|'trade_company_katsina'
+|'trade_company_ethiopia'
+|'trade_company_kongo'
+|'trade_company_great_lakes'
+|'trade_company_zambezi'
+|'trade_company_gulf_of_aden'
+|'trade_company_kiev'
+|'trade_company_novgorod'
+|'trade_company_crimea'
+|'trade_company_aleppo'
+|'trade_company_kazan'
+|'trade_company_astrakhan'
+|'trade_company_basra'
+|'trade_company_persia'
+|'trade_company_hormuz'
+|'trade_company_siberia'
+|'trade_company_samarkand'
+|'trade_company_girin'
+|'trade_company_nippon'
+|'trade_company_yumen'
+|'trade_company_xian'
+|'trade_company_chengdu'
+|'trade_company_lhasa'
+|'trade_company_lahore'
+|'trade_company_polynesia';
+
+hre_reforms
+:'emperor_reichsreform'
+|'emperor_reichsregiment'
+|'emperor_reichsstabilitaet'
+|'emperor_gemeinerpfennig'
+|'emperor_perpetual_diet'
+|'emperor_landsknechtswesen'
+|'emperor_landfriede'
+|'emperor_reichstag_collegia'
+|'emperor_expand_gemeiner_pfennig'
+|'emperor_rechenschaft'
+|'emperor_geteilte_macht'
+|'emperor_reichskrieg'
+|'emperor_hofgericht'
+|'emperor_imperial_estates'
+|'emperor_erbkaisertum'
+|'emperor_privilegia_de_non_appelando'
+|'emperor_renovatio'
+|'reichsreform'
+|'reichsregiment'
+|'hofgericht'
+|'gemeinerpfennig'
+|'landfriede'
+|'erbkaisertum'
+|'privilegia_de_non_appelando'
+|'renovatio';
+
+country_tags
+:'REB'|'PIR'|'NAT'|'SWE'|'DAN'|'FIN'|'GOT'|'NOR'|'SHL'|'SCA'|'EST'|'LVA'|'SMI'|'KRL'|'ICE'|'ACH'|'ALB'|'ATH'|'BOS'|'BUL'|'BYZ'|'CEP'|'CRO'|'CRT'|'CYP'|'DAL'|'EPI'|'GRE'|'KNI'|'MOE'|'MOL'|'MON'|'NAX'|'RAG'|'RMN'|'SER'|'TRA'|'WAL'|'HUN'|'SLO'|'TUR'|'CNN'|'CRN'|'ENG'|'LEI'|'IRE'|'MNS'|'SCO'|'TYR'|'WLS'|'NOL'|'GBR'|'MTH'|'ULS'|'DMS'|'SLN'|'KID'|'HSC'|'ORD'|'TRY'|'FLY'|'MCM'|'KOI'|'LOI'|'BRZ'|'CAN'|'CHL'|'COL'|'HAT'|'LAP'|'LOU'|'MEX'|'PEU'|'PRG'|'QUE'|'CAM'|'USA'|'VNZ'|'AUS'|'CAL'|'TEX'|'CSC'|'ALA'|'NZL'|'ILI'|'FLO'|'VRM'|'SNA'|'WSI'|'CUB'|'DNZ'|'KRA'|'LIT'|'LIV'|'MAZ'|'POL'|'PRU'|'KUR'|'RIG'|'TEU'|'PLC'|'VOL'|'KIE'|'CHR'|'OKA'|'ALE'|'ALS'|'AMG'|'AUV'|'AVI'|'BOU'|'BRI'|'BUR'|'CHP'|'COR'|'DAU'|'FOI'|'FRA'|'GUY'|'NEV'|'NRM'|'ORL'|'PIC'|'PRO'|'SPI'|'TOU'|'BER'|'AAC'|'ANH'|'ANS'|'AUG'|'BAD'|'BAV'|'BOH'|'BRA'|'BRE'|'BRU'|'EFR'|'FRN'|'GER'|'HAB'|'HAM'|'HAN'|'HES'|'HLR'|'KLE'|'KOL'|'LAU'|'LOR'|'LUN'|'MAG'|'MAI'|'MEI'|'MKL'|'MUN'|'MVA'|'OLD'|'PAL'|'POM'|'SAX'|'SIL'|'SLZ'|'STY'|'SWI'|'THU'|'TIR'|'TRI'|'ULM'|'WBG'|'WES'|'WUR'|'NUM'|'MEM'|'VER'|'NSA'|'RVA'|'DTT'|'ARA'|'CAS'|'CAT'|'GRA'|'NAV'|'POR'|'SPA'|'GAL'|'LON'|'ADU'|'VAL'|'ASU'|'MJO'|'AQU'|'ETR'|'FER'|'GEN'|'ITA'|'MAN'|'MLO'|'MOD'|'NAP'|'PAP'|'PAR'|'PIS'|'SAR'|'SAV'|'SIC'|'SIE'|'TUS'|'URB'|'VEN'|'MFA'|'LUC'|'LAN'|'JAI'|'BRB'|'FLA'|'FRI'|'GEL'|'HAI'|'HOL'|'LIE'|'LUX'|'NED'|'UTR'|'ARM'|'AST'|'CRI'|'GEO'|'KAZ'|'MOS'|'NOV'|'PSK'|'QAS'|'RUS'|'RYA'|'TVE'|'UKR'|'YAR'|'ZAZ'|'NOG'|'SIB'|'PLT'|'PRM'|'FEO'|'BSH'|'BLO'|'RSO'|'GOL'|'GLH'|'ADE'|'ALH'|'ANZ'|'ARB'|'ARD'|'BHT'|'DAW'|'ERE'|'FAD'|'GRM'|'HDR'|'HED'|'LEB'|'MAK'|'MDA'|'MFL'|'MHR'|'NAJ'|'NJR'|'OMA'|'RAS'|'SHM'|'SHR'|'SRV'|'YAS'|'YEM'|'HSN'|'BTL'|'AKK'|'AYD'|'CND'|'DUL'|'IRQ'|'KAR'|'SYR'|'TRE'|'SRU'|'MEN'|'RAM'|'AVR'|'MLK'|'SME'|'ARL'|'MSY'|'RUM'|'ALG'|'FEZ'|'MAM'|'MOR'|'TRP'|'TUN'|'EGY'|'KBA'|'TFL'|'SOS'|'TLC'|'TGT'|'GHD'|'FZA'|'MZB'|'SLE'|'TET'|'MRK'|'KZH'|'KHI'|'SHY'|'KOK'|'BUK'|'AFG'|'KHO'|'PER'|'QAR'|'TIM'|'TRS'|'KRY'|'CIR'|'GAZ'|'IME'|'TAB'|'ORM'|'LRI'|'SIS'|'BPI'|'FRS'|'KRM'|'YZD'|'ISF'|'TBR'|'BSR'|'MGR'|'QOM'|'AZT'|'CHE'|'CHM'|'CRE'|'HUR'|'INC'|'IRO'|'MAY'|'SHA'|'ZAP'|'ASH'|'BEN'|'ETH'|'KON'|'MAL'|'NUB'|'SON'|'ZAN'|'ZIM'|'ADA'|'HAU'|'KBO'|'LOA'|'OYO'|'SOF'|'SOK'|'JOL'|'SFA'|'MBA'|'MLI'|'AJU'|'MDI'|'ENA'|'WGD'|'ZND'|'GUR'|'TEN'|'OGD'|'ZUL'|'SOM'|'AKS'|'GZI'|'NBI'|'RZI'|'KIT'|'WAD'|'AFA'|'ALO'|'DAR'|'GLE'|'HAR'|'HOB'|'KAF'|'MED'|'MJE'|'MRE'|'PTE'|'WAR'|'BTI'|'BEJ'|'JIM'|'WLY'|'DAM'|'HDY'|'SOA'|'JJI'|'ABB'|'TYO'|'SYO'|'KSJ'|'LUB'|'LND'|'CKW'|'KIK'|'KZB'|'YAK'|'KLD'|'KUB'|'RWA'|'BUU'|'BUG'|'NKO'|'KRW'|'BNY'|'BSG'|'UBH'|'MRA'|'LDU'|'TBK'|'MKU'|'RZW'|'MIR'|'SKA'|'BTS'|'MFY'|'ANT'|'ANN'|'ARK'|'ATJ'|'AYU'|'BLI'|'BAN'|'BEI'|'CHA'|'CHG'|'CHK'|'DAI'|'JAP'|'AMA'|'ASA'|'CSK'|'DTE'|'HJO'|'HSK'|'HTK'|'IKE'|'IMG'|'MAE'|'MRI'|'ODA'|'OTM'|'OUC'|'SBA'|'SMZ'|'TKD'|'TKG'|'UES'|'YMN'|'RFR'|'ASK'|'KTB'|'ANU'|'AKM'|'AKT'|'CBA'|'ISK'|'ITO'|'KKC'|'KNO'|'OGS'|'SHN'|'STK'|'TKI'|'UTN'|'TTI'|'KHA'|'KHM'|'KOR'|'LNA'|'LUA'|'LXA'|'MAJ'|'MCH'|'MKS'|'MLC'|'MNG'|'MTR'|'OIR'|'PAT'|'PEG'|'QNG'|'RYU'|'SST'|'SUK'|'SUL'|'TAU'|'TIB'|'TOK'|'VIE'|'CZH'|'CSH'|'CXI'|'YUA'|'FRM'|'ILK'|'KLM'|'MGE'|'SOO'|'NVK'|'SOL'|'EJZ'|'NHX'|'MYR'|'MHX'|'MJZ'|'KRC'|'KLK'|'HMI'|'ZUN'|'KAS'|'CHH'|'KSD'|'SYG'|'UTS'|'KAM'|'GUG'|'PHA'|'CDL'|'CYI'|'CMI'|'MIN'|'YUE'|'SHU'|'NNG'|'CHC'|'TNG'|'WUU'|'QIC'|'YAN'|'JIN'|'LNG'|'QIN'|'HUA'|'CGS'|'BAL'|'BNG'|'BIJ'|'BAH'|'DLH'|'GOC'|'DEC'|'MAR'|'MUG'|'MYS'|'VIJ'|'AHM'|'ASS'|'GUJ'|'JNP'|'MAD'|'MLW'|'MAW'|'MER'|'MUL'|'NAG'|'NPL'|'ORI'|'PUN'|'SND'|'BRR'|'JAN'|'KRK'|'GDW'|'GRJ'|'GWA'|'DHU'|'KSH'|'KLN'|'KHD'|'ODH'|'VND'|'MAB'|'MEW'|'BDA'|'BST'|'BHU'|'BND'|'CEY'|'JSL'|'KAC'|'KMT'|'KGR'|'KAT'|'KOC'|'MLB'|'HAD'|'NGA'|'RMP'|'LDK'|'BGL'|'JFN'|'PTA'|'GHR'|'CHD'|'NGP'|'JAJ'|'TRT'|'CMP'|'BGA'|'TPR'|'SDY'|'BHA'|'YOR'|'DGL'|'MBL'|'SKK'|'IDR'|'JLV'|'PTL'|'NVR'|'RJK'|'JGD'|'PRB'|'PAN'|'KLP'|'SBP'|'PTT'|'RTT'|'KLH'|'KJH'|'PRD'|'JPR'|'SRG'|'KND'|'TLG'|'KLT'|'DNG'|'DTI'|'GRK'|'JML'|'LWA'|'MKP'|'SRM'|'KTU'|'KMN'|'GNG'|'TNJ'|'SRH'|'RJP'|'BAR'|'HSA'|'SMO'|'NZH'|'KOJ'|'MSA'|'HIN'|'ABE'|'APA'|'ASI'|'BLA'|'CAD'|'CHI'|'CHO'|'CHY'|'COM'|'FOX'|'ILL'|'LEN'|'MAH'|'MIK'|'MMI'|'NAH'|'OJI'|'OSA'|'OTT'|'PAW'|'PEQ'|'PIM'|'POT'|'POW'|'PUE'|'SHO'|'SIO'|'SUS'|'WCR'|'AIR'|'BON'|'DAH'|'DGB'|'FUL'|'JNN'|'KAN'|'KBU'|'KNG'|'KTS'|'MSI'|'NUP'|'TMB'|'YAO'|'YAT'|'ZAF'|'ZZZ'|'NDO'|'AVA'|'HSE'|'JOH'|'KED'|'LIG'|'MPH'|'MYA'|'PRK'|'MMA'|'MKA'|'MPA'|'MNI'|'KAL'|'HSI'|'BPR'|'CHU'|'HOD'|'CHV'|'KMC'|'BRT'|'ARP'|'CLM'|'CNK'|'COC'|'HDA'|'ITZ'|'KIC'|'KIO'|'MIX'|'SAL'|'TAR'|'TLA'|'TLX'|'TOT'|'WIC'|'XIU'|'BLM'|'BTN'|'CRB'|'DMK'|'PGR'|'PLB'|'PSA'|'SAK'|'SUN'|'KUT'|'BNJ'|'LFA'|'LNO'|'LUW'|'MGD'|'TER'|'TID'|'MAS'|'PGS'|'TDO'|'MNA'|'CEB'|'BTU'|'CSU'|'CCQ'|'MPC'|'MCA'|'QTO'|'CJA'|'HJA'|'PTG'|'TPQ'|'TPA'|'TUA'|'GUA'|'CUA'|'WKA'|'CYA'|'CLA'|'CRA'|'PCJ'|'ARW'|'CAB'|'ICM'|'MAT'|'COI'|'TEO'|'XAL'|'GAM'|'HST'|'CCM'|'OTO'|'YOK'|'LAC'|'KAQ'|'CTM'|'KER'|'ZNI'|'MSC'|'LIP'|'CHT'|'MIS'|'TAI'|'CNP'|'TON'|'YAQ'|'YKT'|'NSS'|'PRY'|'TOR'|'LIB'|'UBV'|'LBV'|'ING'|'PSS'|'MBZ'|'KNZ'|'ROT'|'BYT'|'REG'|'GNV'|'TTL'|'OPL'|'GLG'|'BLG'|'PDV'|'SZO'|'SPL'|'WOL'|'STE'|'GOS'|'SOR'|'RUG'|'CLI'|'HRZ'|'TNT'|'BRG'|'MLH'|'BAM'|'RUP'|'LPP'|'PAD'|'CLB'|'DWT'|'OSN'|'VRN'|'COB'|'LOT'|'PGA'|'TTS'|'FKN'|'SWA'|'BNE'|'BEU'|'SMB'|'BRS'|'DLI'|'JMB'|'PAH'|'KEL'|'IND'|'JAR'|'RHA'|'KOH'|'SIA'|'TIW'|'LAR'|'YOL'|'YNU'|'AWN'|'GMI'|'MIA'|'EOR'|'KUL'|'KAU'|'PLW'|'WRU'|'NOO'|'MLG'|'AOT'|'MAA'|'TAN'|'TAK'|'TNK'|'TEA'|'TTT'|'WAI'|'UHW'|'HAW'|'MAU'|'OAH'|'KAA'|'TOG'|'SAM'|'VIT'|'VIL'|'VNL'|'LAI'|'ALT'|'ICH'|'COF'|'JOA'|'ETO'|'SAT'|'CIA'|'COO'|'ABI'|'COW'|'NTZ'|'CAQ'|'PCH'|'QUI'|'CCA'|'ATA'|'KSI'|'OEO'|'ANL'|'NTC'|'HNI'|'MOH'|'ONE'|'ONO'|'CAY'|'SEN'|'TAH'|'ATT'|'AGG'|'ATW'|'ARN'|'TIO'|'OSH'|'STA'|'ERI'|'WEN'|'TSC'|'OHK'|'ISL'|'ACO'|'CAO'|'PEO'|'KSK'|'PEN'|'MLS'|'NEH'|'NAK'|'HWK'|'CLG'|'KSP'|'MSG'|'WCY'|'LAK'|'INN'|'WAM'|'AGQ'|'JMN'|'ROM'|'SYN'|'ISR';
+
+general_traits
+:'glory_seeker_personality'
+|'born_to_the_saddle_personality'
+|'defensive_planner_personality'
+|'battlefield_medic_personality'
+|'ruthless_personality'
+|'inspirational_leader_general_personality'
+|'master_of_arms_personality'
+|'goal_oriented_personality'
+|'hardy_warrior_personality'
+|'siege_specialist_personality'
+|'cannoneer_personality';
+
+admiral_traits
+:'extortioner_personality'
+|'ruthless_blockader_personality'
+|'buccaneer_personality'
+|'prize_hunter_personality'
+|'ironside_personality'
+|'naval_engineer_personality'
+|'naval_showman_personality'
+|'ram_raider_personality'
+|'naval_gunner_personality'
+|'accomplished_sailor_personality'
+|'level_headed_personality';
+
+incidents
+:'incident_neo_confucianism'
+|'incident_nanban'
+|'incident_firearms'
+|'incident_spread_of_christianity'
+|'incident_shogunate_authority'
+|'incident_ikko_shu'
+|'incident_wokou'
+|'incident_urbanization';
+
+ideas
+:'aristocracy_ideas'
+|'plutocracy_ideas'
+|'horde_gov_ideas'
+|'theocracy_gov_ideas'
+|'indigenous_ideas'
+|'innovativeness_ideas'
+|'religious_ideas'
+|'spy_ideas'
+|'diplomatic_ideas'
+|'offensive_ideas'
+|'defensive_ideas'
+|'trade_ideas'
+|'economic_ideas'
+|'exploration_ideas'
+|'maritime_ideas'
+|'quality_ideas'
+|'quantity_ideas'
+|'expansion_ideas'
+|'administrative_ideas'
+|'humanist_ideas'
+|'influence_ideas'
+|'naval_ideas';
+
+colonials
+:'colonial_alaska'
+|'colonial_canada'
+|'colonial_eastern_america'
+|'colonial_louisiana'
+|'colonial_california'
+|'colonial_mexico'
+|'colonial_the_carribean'
+|'colonial_colombia'
+|'colonial_peru'
+|'colonial_la_plata'
+|'colonial_brazil'
+|'colonial_australia';
 
 regions
 :'random_new_world_region'
@@ -1347,7 +2113,11 @@ buildings
 | 'native_longhouse'
 | 'native_sweat_lodge'
 | 'native_great_trail'
-| 'native_three_sisters_field';
+| 'native_three_sisters_field'
+| 'fort_15th'
+| 'fort_16th'
+| 'fort_17th'
+| 'fort_18th';
 
 ages
 : 'age_of_discovery'
@@ -1872,7 +2642,9 @@ religions
 | 'mesoamerican_religion'
 | 'norse_pagan_reformed'
 | 'tengri_pagan_reformed'
-| 'dreamtime';
+| 'dreamtime'
+| 'jewish'
+| 'zoroastrian';
 
 dlcs
 : '"Conquest of Paradise"'
