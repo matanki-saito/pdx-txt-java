@@ -51,3 +51,5 @@ Include `[lib deploy]` in Commit Message
 ### test
 
 `> gradlew test`
+
+.
