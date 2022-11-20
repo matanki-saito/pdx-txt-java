@@ -86,9 +86,9 @@ text
 format: NUMBER|ALPHABET|EQ|PLUS|MINUS|PERCENT|ASTER;
 id: (ALPHABET|NUMBER|UNDERSCORE)+;
 argument_d: scope|wtext;
-arguments_second: SPACE* COMMA SPACE* argument_d;
-arguments: SPACE* argument_d arguments_second*;
-function: id R_BRANKET_START arguments? R_BRANKET_END;
+arguments_second: COMMA SPACE* argument_d;
+arguments: argument_d arguments_second*;
+function: id R_BRANKET_START SPACE* arguments? SPACE* R_BRANKET_END;
 variable_format: PIPE format+;
 variable: DOLLER id variable_format? DOLLER;
 scope_d: id|function;
