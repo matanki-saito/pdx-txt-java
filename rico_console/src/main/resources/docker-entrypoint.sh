@@ -7,7 +7,7 @@ fi
 
 export REVIEWDOG_GITHUB_API_TOKEN="${INPUT_GITHUB_TOKEN}"
 
-java -jar /opt/rico_console-all.jar -r="${INPUT_ROOT_DIR}" | reviewdog -efm="%f:%l:%c: %m" \
+java -jar /opt/rico_console-all.jar -t="${INPUT_TYPE}" -r="${INPUT_ROOT_DIR}" | reviewdog -efm="%f:%l:%c: %m" \
       -name="linter-name (rico)" \
       -reporter="${INPUT_REPORTER:-github-pr-check}" \
       -filter-mode="${INPUT_FILTER_MODE}" \
