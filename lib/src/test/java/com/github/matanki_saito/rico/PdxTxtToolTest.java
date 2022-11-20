@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(SoftAssertionsExtension.class)
 class PdxTxtToolTest {
-    @Test
+    // @Test
     void validate(SoftAssertions softAssertions) throws Exception {
         var src = getFromResources("error.txt");
         var result= PdxTxtTool.validate(src);
