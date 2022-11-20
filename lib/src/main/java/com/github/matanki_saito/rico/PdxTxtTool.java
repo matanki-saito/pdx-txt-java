@@ -87,29 +87,13 @@ public class PdxTxtTool {
      */
     public static void validateAllToSystemOut(Path root, Pattern matchPathPattern)
             throws SystemException {
-        try {
-            Files.walkFileTree(root, new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) {
-                    var pathStr = filePath.toAbsolutePath().toString();
-
-                    var m = matchPathPattern.matcher(pathStr);
-                    if (m.find()) {
-                        try {
-                            var result = validate(filePath);
-                            if(!result.equals("")){
-                                System.out.println(result);
-                            }
-                        } catch (SystemException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            throw new MachineException("", e);
-        }
+        ToolBase.validateAllToSystemOut(root, matchPathPattern, path -> {
+            try {
+                return validate(path);
+            } catch (SystemException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     /**
