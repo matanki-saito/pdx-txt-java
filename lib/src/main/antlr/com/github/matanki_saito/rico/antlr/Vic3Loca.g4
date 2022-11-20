@@ -3,19 +3,18 @@ grammar Vic3Loca;
     package com.github.matanki_saito.rico.antlr;
 }
 
-D: '$';
+DOLLER: '$';
 BRANKET_START: '[';
 BRANKET_END: ']';
 R_BRANKET_START: '(';
 R_BRANKET_END: ')';
-
 DASH: '\'';
+ESCAPED_DASH: '\\\'';
 COMMA: ',';
-
-TAG_START: '#' ;
+SHARP: '#' ;
+ESCAPED_SHARP: '##';
 EXC: '!';
 ATT: '@';
-
 PIPE: '|';
 EQ: '=';
 PLUS: '+';
@@ -25,18 +24,21 @@ CORON: ':';
 SEMICORON: ';';
 ASTER: '*';
 HATENA: '?';
-
 LINEBREAK: '\\n';
-ESCAPED_DOWBLE_QUOTE: '\\"';
-
-NUMBER: [0-9];
+DOWBLE_QUOTE: '"';
+SLASH: '/';
 DOT: '.';
 SPACE: ' '|' ';
 UNDERSCORE: '_';
-ALPHABET: [a-zA-Z];
-JAPANESE: [ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠（）、「」【】・。：；ー！？]+;
 
-root: section* EOF;
+NUMBER: [0-9];
+ALPHABET: [a-zA-ZÖ];
+LATIN_SIGH:[•~><£];
+JAPANESE: [ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠（）、「」【】・。：；！？々～…×　＝ー―ｰ—－]+;
+
+root:sections EOF;
+
+sections: section*;
 
 section
 :variable
@@ -44,6 +46,7 @@ section
 |shell
 |tag
 |tooltippable_tag_1
+|tooltippable_tag_2
 |tooltip_tag_1
 |tooltip_tag_2
 |tooltip_tag_3
@@ -53,7 +56,7 @@ text
 : NUMBER+
 | ALPHABET+
 | JAPANESE+
-| D
+| DOLLER
 | BRANKET_START
 | BRANKET_END
 | DOT
@@ -70,25 +73,36 @@ text
 | COMMA
 | CORON
 | LINEBREAK
-| TAG_START
 | ASTER
 | SEMICORON
-| ESCAPED_DOWBLE_QUOTE
-| HATENA;
+| ESCAPED_SHARP
+| HATENA
+| SLASH
+| ESCAPED_DASH
+| LATIN_SIGH
+| EQ
+| DOWBLE_QUOTE;
 
 format: NUMBER|ALPHABET|EQ|PLUS|MINUS|PERCENT|ASTER;
-id: (ALPHABET|UNDERSCORE)+;
-arguments: (SPACE* (scope|wtext) SPACE* COMMA? SPACE*)*;
-function: id R_BRANKET_START arguments R_BRANKET_END;
-variable: D id (PIPE format+)? D;
-scope: (id|function) (DOT (id|function))* ;
-shell_target: scope;
-shell: BRANKET_START SPACE* shell_target (PIPE format+)? SPACE* BRANKET_END;
-tooltippable_tag_1: '#tooltippable;' id SEMICORON id CORON id SPACE section* TAG_START EXC;
+id: (ALPHABET|NUMBER|UNDERSCORE)+;
+argument_d: scope|wtext;
+arguments_second: SPACE* COMMA SPACE* argument_d;
+arguments: SPACE* argument_d arguments_second*;
+function: id R_BRANKET_START arguments? R_BRANKET_END;
+variable_format: PIPE format+;
+variable: DOLLER id variable_format? DOLLER;
+scope_d: id|function;
+scope_second: DOT scope_d;
+scope: scope_d scope_second* ;
+shell_target: (scope|variable);
+shell: BRANKET_START SPACE* shell_target variable_format? SPACE* BRANKET_END;
+tagend: SHARP EXC;
+tooltippable_tag_1: '#tooltippable;' id SEMICORON id CORON id SPACE sections tagend;
+tooltippable_tag_2: '#tooltippable;' id CORON id SPACE sections tagend;
 tooltip_target_tag: (id|variable|shell);
-tooltip_tag_1: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE section* TAG_START EXC;
-tooltip_tag_2: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE* COMMA SPACE* id SPACE section* TAG_START EXC;
-tooltip_tag_3: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE* COMMA SPACE* id SPACE* COMMA SPACE* id SPACE section* TAG_START EXC;
-tag: TAG_START id SPACE section* TAG_START EXC;
+tooltip_tag_1: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE sections tagend;
+tooltip_tag_2: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE* COMMA SPACE* tooltip_target_tag SPACE sections tagend;
+tooltip_tag_3: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE* COMMA SPACE* tooltip_target_tag SPACE* COMMA SPACE* id SPACE sections tagend;
+tag: SHARP id (CORON NUMBER)? SPACE sections tagend;
 icon: ATT id EXC;
-wtext: DASH section* DASH;
+wtext: DASH sections DASH;
