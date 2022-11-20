@@ -5,8 +5,8 @@ on:
     branches: [ main ]
   workflow_dispatch:
     inputs:
-      info:
-        description: 'manual trigger'
+      operation:
+        description: '[con build] etc'
         required: false
 jobs:
   build-job:
