@@ -32,9 +32,12 @@ inputs:
   ROOT_DIR:
     description: 'target root dir'
     default: './'
+  TYPE:
+    description: 'format type'
+    default: 'txt'
 runs:
   using: 'docker'
-  image: docker://ghcr.io/matanki-saito/rico-con:0.0.18-con
+  image: docker://ghcr.io/matanki-saito/rico-con:0.0.20-con
 
 
 # TODO: update branding if you want.
