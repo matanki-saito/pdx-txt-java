@@ -31,6 +31,7 @@
   <!-- main -->
   <link rel="stylesheet" href="/front/css/site.css">
   <script src="/front/js/main.js"></script>
+  <script src="/front/js/vic3loca.js"></script>
 
 </head>
 <body>
@@ -45,7 +46,8 @@
 <!-- main -->
 <script>
     const routes = [
-        {path: '/tool', component: pdxTxtWebFront, name: 'pdx-txt-web-front'}
+        {path: '/tool', component: pdxTxtWebFront, name: 'pdx-txt-web-front'},
+        {path: '/vic3tool', component: pdxTxtWebFrontVic3Loca, name: 'pdx-txt-web-front-vic3-loca'}
     ];
 
     const router = new VueRouter({
