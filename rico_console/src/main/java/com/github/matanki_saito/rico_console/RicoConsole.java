@@ -1,21 +1,29 @@
 package com.github.matanki_saito.rico_console;
 
 import com.github.matanki_saito.rico.PdxTxtTool;
+import com.github.matanki_saito.rico.Vic3LocaTool;
 import com.github.matanki_saito.rico.exception.SystemException;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import java.io.File;
 import java.util.regex.Pattern;
 
-@CommandLine.Command(name = "example", mixinStandardHelpOptions = true, version = "Picocli example 4.0")
+@CommandLine.Command(name = "rico", mixinStandardHelpOptions = true, version = "rico dev version")
 public class RicoConsole implements Runnable {
 
     @Option(names = { "-r", "--root" }, paramLabel = "DIRECTORY", description = "Target root directory")
     File rootDir;
 
+    @Option(names = {"-t", "--type"}, description = "vic3loca, txt")
+    String type = "txt";
+
     public void run() {
         try {
-            PdxTxtTool.validateAllToSystemOut(rootDir.toPath(), Pattern.compile("\\.txt"));
+            switch (type){
+                case "txt" -> PdxTxtTool.validateAllToSystemOut(rootDir.toPath(), Pattern.compile("\\.txt"));
+                case "vic3loca" -> Vic3LocaTool.validateAllToSystemOut(rootDir.toPath(), Pattern.compile("\\.yml"));
+            }
+
         } catch (SystemException e) {
             System.out.println(e.getMessage());
             throw new RuntimeException(e);
