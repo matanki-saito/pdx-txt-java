@@ -37,13 +37,8 @@ class Vic3LocaToolTest {
 
     @Test
     void vic3LocaTest(SoftAssertions softAssertions) throws Exception {
-        var yaml = PdxLocaYamlTool
-                .parse(getFromResources("core_l_japanese.yml"));
-
-        for(var r : yaml.getRecords()){
-            var result = Vic3LocaTool.validate(r.getBody());
-            softAssertions.assertThat(result).isEqualTo("");
-        }
+        var yaml = Vic3LocaTool.validate(getFromResources("core_l_japanese.yml"));
+        softAssertions.assertThat(yaml).isNotBlank();
    }
 
     @Test
@@ -53,10 +48,10 @@ class Vic3LocaToolTest {
 
         var no36 = yaml.getRecords().get(36);
         var v = Vic3LocaTool.convertStringToJson(no36.getBody(),true);
-        softAssertions.assertThat(v).isEqualTo("");
+        softAssertions.assertThat(v).isNotBlank();
     }
 
-    @Test
+    //@Test //localのみ
     void vic3LocaFolderTest(SoftAssertions softAssertions) throws Exception {
 
         // Steam default Vic3 JP localization path
