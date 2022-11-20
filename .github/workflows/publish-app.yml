@@ -11,7 +11,7 @@ on:
 jobs:
   build-job:
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[skip ci]') && contains(github.event.head_commit.message, '[app build]')"
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && (contains(github.event.head_commit.message, '[app build]') ||  contains(github.event.inputs.operation, '[app build]'))"
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 17
