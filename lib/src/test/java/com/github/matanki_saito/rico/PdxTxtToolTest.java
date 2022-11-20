@@ -26,7 +26,7 @@ class PdxTxtToolTest {
             build\\resources\\test\\error.txt:2:17: extraneous input '!' expecting {WRAP_STRING, NUMBER, DATE_TIME, 'false', 'true', 'null', 'yes', 'no', KEY_LEVEL_STRING, '{', '}'}""";
         softAssertions.assertThat(result).isEqualTo(ex);
     }
-    @Test
+    // @Test localのみ
     void validateAll(SoftAssertions softAssertions) throws Exception {
         var src = getFromResources("error.txt");
         PdxTxtTool.validateAllToSystemOut(Path.of("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Europa Universalis IV\\missions"),Pattern.compile("\\.txt"));
