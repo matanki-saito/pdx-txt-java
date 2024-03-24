@@ -1,6 +1,8 @@
 package com.github.matanki_saito.rico;
 
 import com.github.matanki_saito.rico.exception.PdxParseException;
+import com.github.matanki_saito.rico.txt.PatchTool;
+import com.github.matanki_saito.rico.txt.PdxTxtTool;
 import com.jayway.jsonpath.JsonPath;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;

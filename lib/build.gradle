@@ -33,12 +33,12 @@ dependencies {
     // api
 
     // 外部(このライブラリの利用者)に公開せず、ライブラリ内の実装でのみ使う依存関係
-    implementation 'com.google.guava:guava:29.0-jre'
+    implementation 'com.google.guava:guava:33.0.0-jre'
     implementation 'org.antlr:antlr4-runtime:4.9.1'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
     implementation 'org.apache.commons:commons-lang3:3.11'
     implementation 'com.jayway.jsonpath:json-path:2.5.0'
-    implementation 'org.yaml:snakeyaml:1.17'
+    implementation 'org.yaml:snakeyaml:2.2'
 
     // コンパイル時にのみ必要となる依存関係(実行時にリークしてはならないもの)
     compileOnly 'org.projectlombok:lombok:1.18.16'

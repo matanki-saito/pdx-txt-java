@@ -1,18 +1,18 @@
 package com.github.matanki_saito.rico_webapp.controller;
 
-import com.github.matanki_saito.rico.Vic3LocaTool;
-import com.github.matanki_saito.rico_webapp.model.*;
+import com.github.matanki_saito.rico.exception.ArgumentException;
+import com.github.matanki_saito.rico.exception.SystemException;
+import com.github.matanki_saito.rico.txt.PdxTxtTool;
+import com.github.matanki_saito.rico_webapp.model.ConvertJsonToTxtForm;
+import com.github.matanki_saito.rico_webapp.model.ConvertJsonToTxtFormResponse;
+import com.github.matanki_saito.rico_webapp.model.ConvertTxtToJsonForm;
+import com.github.matanki_saito.rico_webapp.model.ConvertTxtToJsonFormResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.github.matanki_saito.rico.PdxTxtTool;
-import com.github.matanki_saito.rico.exception.ArgumentException;
-import com.github.matanki_saito.rico.exception.SystemException;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -25,8 +25,8 @@ public class FrontApiController extends ControllerBase {
         var json = PdxTxtTool.convertTxtToJson(form.getTxt(), true);
 
         return ConvertTxtToJsonFormResponse.builder()
-                                           .json(json)
-                                           .build();
+                .json(json)
+                .build();
     }
 
     @PostMapping("/convertJsonToTxt")
@@ -35,17 +35,7 @@ public class FrontApiController extends ControllerBase {
         var txt = PdxTxtTool.convertJsonToTxt(form.getJson());
 
         return ConvertJsonToTxtFormResponse.builder()
-                                           .txt(txt)
-                                           .build();
-    }
-
-    @PostMapping("/convertLocaToJson")
-    public ConvertLocaToJsonFormResponse convertLocaToJson(@RequestBody @Validated ConvertLocaToJsonForm form)
-            throws SystemException, ArgumentException {
-        var json = Vic3LocaTool.convertStringToJson(form.getLoca(), true);
-
-        return ConvertLocaToJsonFormResponse.builder()
-                .json(json)
+                .txt(txt)
                 .build();
     }
 }

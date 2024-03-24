@@ -1,7 +1,6 @@
 package com.github.matanki_saito.rico_console;
 
-import com.github.matanki_saito.rico.PdxTxtTool;
-import com.github.matanki_saito.rico.Vic3LocaTool;
+import com.github.matanki_saito.rico.txt.PdxTxtTool;
 import com.github.matanki_saito.rico.exception.SystemException;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
@@ -21,7 +20,7 @@ public class RicoConsole implements Runnable {
         try {
             switch (type){
                 case "txt" -> PdxTxtTool.validateAllToSystemOut(rootDir.toPath(), Pattern.compile("\\.txt"));
-                case "vic3loca" -> Vic3LocaTool.validateAllToSystemOut(rootDir.toPath(), Pattern.compile("\\.yml"));
+                //case "vic3loca" -> PdxLocaYmlToolTest.validateAllToSystemOut(rootDir.toPath(), Pattern.compile("\\.yml"));
             }
 
         } catch (SystemException e) {
