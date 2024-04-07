@@ -16,7 +16,7 @@ class PdxLocaYmlToolTest {
 
     private final Path vic3Target = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\localization\\japanese");
 
-    @Test
+    //@Test
     void normalizeFile() throws Exception {
         var source = new LocalSource(ck3jomini, ck3JpMod);
         var pattern = new PdxLocaMatchPattern();
