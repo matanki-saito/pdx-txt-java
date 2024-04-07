@@ -5,8 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 public interface PdxLocaSource {
     PdxLocaYamlRecord get(String key) throws ArgumentException;
+
+    List<String> getKeys(String fileName) throws ArgumentException;
 
     boolean exists(String key);
 

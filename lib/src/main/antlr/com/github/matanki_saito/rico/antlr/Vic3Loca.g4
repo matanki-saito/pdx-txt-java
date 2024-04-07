@@ -24,6 +24,7 @@ CORON: ':';
 SEMICORON: ';';
 ASTER: '*';
 HATENA: '?';
+AND: '&';
 LINEBREAK: '\\n';
 DOWBLE_QUOTE: '"';
 SLASH: '/';
@@ -31,10 +32,12 @@ DOT: '.';
 SPACE: ' '|' ';
 UNDERSCORE: '_';
 
+
 NUMBER: [0-9];
 ALPHABET: [a-zA-ZÖ];
 LATIN_SIGH:[•~><£];
-JAPANESE: [ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠（）、「」【】・。：；！？々～…×　＝ー―ｰ—－]+;
+JAPANESE: [ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠（）、「」【】・。：；！？々～…×　＝ー―ｰ—－０-９]+;
+ZWSP: '​';
 
 root:sections EOF;
 
@@ -56,6 +59,8 @@ text
 : NUMBER+
 | ALPHABET+
 | JAPANESE+
+| ZWSP
+| AND
 | DOLLER
 | BRANKET_START
 | BRANKET_END
@@ -84,7 +89,7 @@ text
 | DOWBLE_QUOTE;
 
 format: NUMBER|ALPHABET|EQ|PLUS|MINUS|PERCENT|ASTER;
-id: (ALPHABET|NUMBER|UNDERSCORE)+;
+id: (ALPHABET|NUMBER|UNDERSCORE|MINUS)+;
 argument_d: scope|wtext;
 arguments_second: COMMA SPACE* argument_d;
 arguments: argument_d arguments_second*;

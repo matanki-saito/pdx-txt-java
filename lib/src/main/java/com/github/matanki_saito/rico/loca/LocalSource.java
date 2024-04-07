@@ -7,10 +7,7 @@ import com.github.matanki_saito.rico.exception.SystemException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,27 +22,26 @@ public class LocalSource implements PdxLocaSource {
 
     private final Map<String, PdxLocaYamlRecord> data = new HashMap<>();
 
-    private final Path locaRootDir;
-
-    public LocalSource(Path locaRootDir) throws MachineException {
-        try (Stream<Path> paths = Files.walk(locaRootDir)) {
-            for (var file : paths.filter(target -> {
-                // locaDirにはReadMe.txtがあったりするのでそれを除去
-                return Files.isRegularFile(target) && fileYml.matcher(target.toString()).matches();
-            }).toList()) {
-                // locaファイルの拡張子はymlだがyamlの定義には従っていないので自分でparseする必要がある
-                for (var record : parse(file)) {
-                    // keyの重複は原則ないがもし存在した場合はversionを基準とする
-                    // versionが存在しない場合は上書き
-                    data.computeIfPresent(record.getKey(), (k, v) ->
-                            record.getVersion() != null && v.getVersion() != null && record.getVersion() > v.getVersion() ? record : v
-                    );
-                    data.putIfAbsent(record.getKey(), record);
+    public LocalSource(Path... locaRootDirs) throws MachineException {
+        for (var locaRootDir : locaRootDirs) {
+            try (Stream<Path> paths = Files.walk(locaRootDir)) {
+                for (var file : paths.filter(target -> {
+                    // locaDirにはReadMe.txtがあったりするのでそれを除去
+                    return Files.isRegularFile(target) && fileYml.matcher(target.toString()).matches();
+                }).toList()) {
+                    // locaファイルの拡張子はymlだがyamlの定義には従っていないので自分でparseする必要がある
+                    for (var record : parse(file)) {
+                        // keyの重複は原則ないがもし存在した場合はversionを基準とする
+                        // versionが存在しない場合は上書き
+                        data.computeIfPresent(record.getKey(), (k, v) ->
+                                record.getVersion() != null && v.getVersion() != null && record.getVersion() > v.getVersion() ? record : v
+                        );
+                        data.putIfAbsent(record.getKey(), record);
+                    }
                 }
+            } catch (IOException e) {
+                throw new MachineException("ファイルの列挙途中で異常が発生", e);
             }
-            this.locaRootDir = locaRootDir;
-        } catch (IOException e) {
-            throw new MachineException("ファイルの列挙途中で異常が発生", e);
         }
     }
 
@@ -88,8 +84,21 @@ public class LocalSource implements PdxLocaSource {
     }
 
     @Override
+    public List<String> getKeys(String fileName) throws ArgumentException {
+        return data.values()
+                .stream()
+                .filter(pdxLocaYamlRecord -> pdxLocaYamlRecord.getFileName().equals(fileName))
+                .map(PdxLocaYamlRecord::getKey)
+                .toList();
+    }
+
+    @Override
     public boolean exists(String key) {
         return data.containsKey(key);
+    }
+
+    public void validation() throws SystemException {
+        validation(null);
     }
 
     /**
@@ -97,10 +106,10 @@ public class LocalSource implements PdxLocaSource {
      *
      * @throws SystemException システム例外
      */
-    public void validation(String fileName) throws SystemException {
+    public void validation(String fileName) {
         data.entrySet()
                 .stream()
-                .filter(record -> record.getValue().getFileName().equals(fileName))
+                .filter(record -> fileName == null || record.getValue().getFileName().equals(fileName))
                 .forEach(record -> {
                     var object = new LocaAnalyzedObject(record.getValue().getBody());
                     if (object.getListener().getExceptions().isEmpty()) {
@@ -126,19 +135,6 @@ public class LocalSource implements PdxLocaSource {
                     ).collect(Collectors.joining("\n"));
 
                     System.out.println(errorMessage);
-                });
-    }
-
-    public void normalize(String fileName) throws SystemException {
-        data.entrySet()
-                .stream()
-                .filter(record -> record.getValue().getFileName().equals(fileName))
-                .forEach(record -> {
-                    try {
-                        System.out.println(PdxLocaYmlTool.normalize(record.getKey(),this));
-                    } catch (ArgumentException e) {
-                        //
-                    }
                 });
     }
 }
