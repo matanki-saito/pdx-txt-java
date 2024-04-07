@@ -76,7 +76,6 @@ jar {
 
 java {
     withSourcesJar()
-    withJavadocJar()
 }
 
 javadoc {
