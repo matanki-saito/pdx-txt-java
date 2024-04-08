@@ -2,7 +2,6 @@ package com.github.matanki_saito.rico.loca;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.file.Path;
@@ -18,7 +17,7 @@ class PdxLocaYmlToolTest {
 
     private final Path vic3Target = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\localization\\japanese");
 
-    @Test
+    //@Test
     void normalizeFile() throws Exception {
         var source = new LocalSource(Pair.of("ck3", ck3jomini), Pair.of("ck3", ck3JpMod));
         var pattern = new PdxLocaMatchPattern();
