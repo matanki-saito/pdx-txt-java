@@ -3,11 +3,15 @@ package com.github.matanki_saito.rico.loca;
 import com.github.matanki_saito.rico.exception.ArgumentException;
 import com.github.matanki_saito.rico.exception.MachineException;
 import com.github.matanki_saito.rico.exception.SystemException;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -22,15 +26,17 @@ public class LocalSource implements PdxLocaSource {
 
     private final Map<String, PdxLocaYamlRecord> data = new HashMap<>();
 
-    public LocalSource(Path... locaRootDirs) throws MachineException {
-        for (var locaRootDir : locaRootDirs) {
-            try (Stream<Path> paths = Files.walk(locaRootDir)) {
+    private PdxLocaSourceFilter filter;
+
+    public LocalSource(Pair<String, Path>... pairs) throws MachineException {
+        for (var pair : pairs) {
+            try (Stream<Path> paths = Files.walk(pair.getRight())) {
                 for (var file : paths.filter(target -> {
                     // locaDirにはReadMe.txtがあったりするのでそれを除去
                     return Files.isRegularFile(target) && fileYml.matcher(target.toString()).matches();
                 }).toList()) {
                     // locaファイルの拡張子はymlだがyamlの定義には従っていないので自分でparseする必要がある
-                    for (var record : parse(file)) {
+                    for (var record : parse(Pair.of(pair.getKey(), file))) {
                         // keyの重複は原則ないがもし存在した場合はversionを基準とする
                         // versionが存在しない場合は上書き
                         data.computeIfPresent(record.getKey(), (k, v) ->
@@ -45,10 +51,10 @@ public class LocalSource implements PdxLocaSource {
         }
     }
 
-    private static List<PdxLocaYamlRecord> parse(Path path) throws MachineException {
+    private static List<PdxLocaYamlRecord> parse(Pair<String, Path> pair) throws MachineException {
         var result = new ArrayList<PdxLocaYamlRecord>();
         try {
-            var allLines = Files.readAllLines(path);
+            var allLines = Files.readAllLines(pair.getRight());
             for (var col = 0; col < allLines.size(); col++) {
                 var line = allLines.get(col);
                 var m = language.matcher(line);
@@ -63,7 +69,8 @@ public class LocalSource implements PdxLocaSource {
                             m.group(3),
                             m.group(5),
                             col + 1,
-                            path.getFileName().toString()
+                            pair.getRight().getFileName().toString(),
+                            pair.getLeft()
                     ));
                 }
             }
@@ -74,20 +81,21 @@ public class LocalSource implements PdxLocaSource {
         return result;
     }
 
+
     @Override
-    public PdxLocaYamlRecord get(String key) throws ArgumentException {
+    public PdxLocaYamlRecord get(String key) throws ArgumentException, SystemException {
         if (!data.containsKey(key)) {
             throw new ArgumentException("keyは存在しません");
         }
-
         return data.get(key);
     }
 
     @Override
-    public List<String> getKeys(String fileName) throws ArgumentException {
+    public List<String> getKeys() throws ArgumentException, SystemException {
         return data.values()
                 .stream()
-                .filter(pdxLocaYamlRecord -> pdxLocaYamlRecord.getFileName().equals(fileName))
+                .filter(x -> filter.getFileNames().contains(x.getFileName())
+                        && filter.getIndecies().contains(x.getIndexName()))
                 .map(PdxLocaYamlRecord::getKey)
                 .toList();
     }
@@ -95,6 +103,11 @@ public class LocalSource implements PdxLocaSource {
     @Override
     public boolean exists(String key) {
         return data.containsKey(key);
+    }
+
+    @Override
+    public void apply(PdxLocaSourceFilter filter) {
+        this.filter = filter;
     }
 
     public void validation() throws SystemException {

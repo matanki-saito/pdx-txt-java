@@ -1,11 +1,13 @@
 package com.github.matanki_saito.rico.loca;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 @ExtendWith(SoftAssertionsExtension.class)
 class PdxLocaYmlToolTest {
@@ -16,12 +18,15 @@ class PdxLocaYmlToolTest {
 
     private final Path vic3Target = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\localization\\japanese");
 
-    //@Test
+    @Test
     void normalizeFile() throws Exception {
-        var source = new LocalSource(ck3jomini, ck3JpMod);
+        var source = new LocalSource(Pair.of("ck3", ck3jomini), Pair.of("ck3", ck3JpMod));
         var pattern = new PdxLocaMatchPattern();
 
-        var result = PdxLocaYmlTool.normalizeFile("core_l_english.yml", source, pattern);
+        source.apply(PdxLocaSource.PdxLocaSourceFilter.builder()
+                .fileNames(List.of("core_l_english.yml")).indecies(List.of("ck3")).build());
+
+        var result = PdxLocaYmlTool.normalize(source, pattern);
 
         result.forEach((key, value) -> System.out.printf("KEY=%s,\nVALUE=%s%n", key, value));
     }

@@ -3,6 +3,7 @@ package com.github.matanki_saito.rico.loca;
 import com.github.matanki_saito.rico.antlr.Vic3LocaParser;
 import com.github.matanki_saito.rico.exception.ArgumentException;
 import com.github.matanki_saito.rico.exception.PdxParseException;
+import com.github.matanki_saito.rico.exception.SystemException;
 import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -13,31 +14,34 @@ import java.util.stream.Collectors;
 
 @UtilityClass
 public class PdxLocaYmlTool {
+    public static String normalize(String key,
+                                   PdxLocaSource source,
+                                   PdxLocaMatchPattern pattern)
+            throws ArgumentException, SystemException {
+        try {
+            var record = source.get(key);
 
-    static String normalize(String key,
-                            PdxLocaSource source,
-                            PdxLocaMatchPattern pattern) throws ArgumentException {
-        var loca = source.get(key);
+            var object = new LocaAnalyzedObject(record.getBody());
 
-        var object = new LocaAnalyzedObject(loca.getBody());
-
-        if (object.getListener().getExceptions().isEmpty()) {
-            return sweep(object.getContext(), source, pattern);
-        } else {
-            throw new PdxParseException("不正なローカライズテキストです. key=%s, err=%s".formatted(key, object.getListener().getExceptions()), object.getListener().getExceptions());
+            if (object.getListener().getExceptions().isEmpty()) {
+                return sweep(object.getContext(), source, pattern);
+            } else {
+                throw new PdxParseException("不正なローカライズテキストです. key=%s, err=%s"
+                        .formatted(record.getKey(), object.getListener().getExceptions()), object.getListener().getExceptions());
+            }
+        } catch (ArgumentException e) {
+            return e.getMessage();
         }
+
     }
 
-    static Map<String, String> normalizeFile(String file,
-                                             PdxLocaSource source,
-                                             PdxLocaMatchPattern pattern) throws ArgumentException {
-        return source
-                .getKeys(file)
-                .stream()
-                .collect(Collectors.toMap(key -> key, key -> {
+    public static Map<String, String> normalize(PdxLocaSource source, PdxLocaMatchPattern pattern)
+            throws ArgumentException, SystemException {
+        return source.getKeys().stream().collect(Collectors.toMap(key -> key,
+                key -> {
                     try {
                         return normalize(key, source, pattern);
-                    } catch (ArgumentException e) {
+                    } catch (ArgumentException | SystemException e) {
                         return "";
                     }
                 }));
@@ -146,17 +150,17 @@ public class PdxLocaYmlTool {
             }
 
             var x = String.join("=", result);
-
-            if (source.exists("game_concept_" + x)) {
+            var keyX = "game_concept_" + x;
+            if (source.exists(keyX)) {
                 try {
-                    return normalize("game_concept_" + x, source, pattern);
-                } catch (ArgumentException e) {
+                    return normalize(keyX, source, pattern);
+                } catch (ArgumentException | SystemException e) {
                     throw new RuntimeException("予期せぬエラー");
                 }
             } else if (source.exists(x)) {
                 try {
                     return normalize(x, source, pattern);
-                } catch (ArgumentException e) {
+                } catch (ArgumentException | SystemException e) {
                     throw new RuntimeException("予期せぬエラー");
                 }
             }
@@ -184,7 +188,7 @@ public class PdxLocaYmlTool {
             if (source.exists(id)) {
                 try {
                     return normalize(id, source, pattern);
-                } catch (ArgumentException e) {
+                } catch (ArgumentException | SystemException e) {
                     throw new RuntimeException("予期せぬエラー", e);
                 }
             } else {
