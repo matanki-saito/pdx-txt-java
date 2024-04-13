@@ -152,13 +152,13 @@ public class PdxLocaYmlTool {
 
             var x = String.join("=", result);
             var keyX = "game_concept_" + x;
-            if (source.exists(keyX)) {
+            if (source.exists(keyX,filter)) {
                 try {
                     return normalize(keyX, source, pattern,filter);
                 } catch (ArgumentException | SystemException e) {
                     throw new RuntimeException("予期せぬエラー");
                 }
-            } else if (source.exists(x)) {
+            } else if (source.exists(x,filter)) {
                 try {
                     return normalize(x, source, pattern,filter);
                 } catch (ArgumentException | SystemException e) {
@@ -184,7 +184,7 @@ public class PdxLocaYmlTool {
         // 変数：$xxx$
         if (tree instanceof Vic3LocaParser.VariableContext variableContext) {
             var id = variableContext.id().getText();
-            if (source.exists(id)) {
+            if (source.exists(id,filter)) {
                 try {
                     return normalize(id, source, pattern,filter);
                 } catch (ArgumentException | SystemException e) {

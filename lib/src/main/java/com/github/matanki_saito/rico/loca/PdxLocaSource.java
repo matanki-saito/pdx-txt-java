@@ -13,7 +13,7 @@ public interface PdxLocaSource {
 
     List<String> getKeys(PdxLocaFilter filter) throws ArgumentException, SystemException;
 
-    boolean exists(String key);
+    boolean exists(String key, PdxLocaFilter filter);
 
     @AllArgsConstructor
     @NoArgsConstructor

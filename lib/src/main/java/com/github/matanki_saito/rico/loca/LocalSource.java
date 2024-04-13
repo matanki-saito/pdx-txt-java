@@ -99,7 +99,7 @@ public class LocalSource implements PdxLocaSource {
     }
 
     @Override
-    public boolean exists(String key) {
+    public boolean exists(String key, PdxLocaFilter filter) {
         return data.containsKey(key);
     }
 
