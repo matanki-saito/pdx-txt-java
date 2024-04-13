@@ -7,6 +7,7 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
+import com.google.api.services.sheets.v4.model.Sheet;
 import com.google.api.services.sheets.v4.model.Spreadsheet;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -28,28 +29,40 @@ import java.util.stream.Collectors;
 public class PdxLocaMatchPattern {
 
     private final static String defaultSpreadSheetId = "1hvO4Z4m_zMjhHPGH-BhKcmiHgfbPo7hY4xfpPWwKH6E";
-    private final static String defaultSheetName = "シート1";
 
     private final static String defaultSecretEnvName = "GSUITE_CREDENTIAL";
 
-    private Map<Pattern, String> scopePattern = new HashMap<>();
+    private Map<String, Map<Pattern, String>> pattern = new HashMap<>();
 
     public PdxLocaMatchPattern() throws MachineException, ArgumentException {
         reload();
     }
 
-    public PdxLocaMatchPattern(String spreadSheetId, String sheetName) throws MachineException, ArgumentException {
-        reload(spreadSheetId, sheetName);
+    public Map<Pattern, String> getPattern(List<String> indices) {
+        var result = new HashMap<Pattern, String>();
+        for (var idx : indices) {
+            if (pattern.containsKey(idx)) {
+                result.putAll(pattern.get(idx));
+            }
+        }
+        return result;
+    }
+
+    public PdxLocaMatchPattern(String spreadSheetId) throws MachineException, ArgumentException {
+        reload(spreadSheetId);
     }
 
     public void reload() throws MachineException, ArgumentException {
-        reload(defaultSpreadSheetId, defaultSheetName);
+        reload(defaultSpreadSheetId);
     }
 
-    public void reload(String spreadSheetId, String sheetName) throws MachineException, ArgumentException {
+    public void reload(String spreadSheetId) throws MachineException, ArgumentException {
         var spreadSheets = getSpreadsheets();
-        var map = getMapping(spreadSheets, spreadSheetId, sheetName);
-        scopePattern = convertPatterns(map);
+        var map = getMapping(spreadSheets, spreadSheetId);
+        pattern = map
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, v -> convertPatterns(v.getValue())));
     }
 
     private Map<Pattern, String> convertPatterns(Map<String, String> map) {
@@ -86,33 +99,43 @@ public class PdxLocaMatchPattern {
         return service.spreadsheets();
     }
 
-    private Map<String, String> getMapping(Sheets.Spreadsheets spreadsheets,
-                                           String spreadSheetId,
-                                           String sheetName) throws ArgumentException {
+    private Map<String, Map<String, String>> getMapping(Sheets.Spreadsheets spreadsheets,
+                                                        String spreadSheetId) throws ArgumentException {
 
-        var result = new HashMap<String, String>();
+        var result = new HashMap<String, Map<String, String>>();
 
         Spreadsheet spreadsheet;
-
         try {
             spreadsheet = spreadsheets.get(spreadSheetId)
-                    .setRanges(List.of(sheetName))
-                    .setFields("sheets.data.rowData.values(userEnteredValue,effectiveValue)")                                    //取得するField
+                    .setFields("sheets.properties(sheetId,title),sheets.data.rowData.values(userEnteredValue,effectiveValue)")                                    //取得するField
                     .execute();
         } catch (IOException e) {
             throw new ArgumentException("シート取得ミス", e);
         }
 
-        for (var row : spreadsheet.getSheets().get(0).getData().get(0).getRowData()) {
+        for (var sheet : spreadsheet.getSheets()) {
+            var elem = getStringStringHashMap(sheet);
+            result.put(sheet.getProperties().getTitle(), elem);
+        }
+
+        return result;
+    }
+
+    private static HashMap<String, String> getStringStringHashMap(Sheet sheet) {
+        var elem = new HashMap<String, String>();
+
+        if (sheet.getData().isEmpty() || sheet.getData().get(0).getRowData() == null)
+            return elem;
+
+        for (var row : sheet.getData().get(0).getRowData()) {
             var cell = row.getValues();
             var a = cell.get(0).getUserEnteredValue().getStringValue();
             var b = cell.get(0).getUserEnteredValue().getNumberValue();
             var c = cell.get(1).getUserEnteredValue().getStringValue();
             var d = cell.get(1).getUserEnteredValue().getNumberValue();
 
-            result.put(a != null ? a : b.toString(), c != null ? c : d.toString());
+            elem.put(a != null ? a : b.toString(), c != null ? c : d.toString());
         }
-
-        return result;
+        return elem;
     }
 }

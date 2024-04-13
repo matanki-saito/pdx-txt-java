@@ -26,8 +26,6 @@ public class LocalSource implements PdxLocaSource {
 
     private final Map<String, PdxLocaYamlRecord> data = new HashMap<>();
 
-    private PdxLocaSourceFilter filter;
-
     public LocalSource(Pair<String, Path>... pairs) throws MachineException {
         for (var pair : pairs) {
             try (Stream<Path> paths = Files.walk(pair.getRight())) {
@@ -91,7 +89,7 @@ public class LocalSource implements PdxLocaSource {
     }
 
     @Override
-    public List<String> getKeys() throws ArgumentException, SystemException {
+    public List<String> getKeys(PdxLocaFilter filter) throws ArgumentException, SystemException {
         return data.values()
                 .stream()
                 .filter(x -> filter.getFileNames().contains(x.getFileName())
@@ -103,11 +101,6 @@ public class LocalSource implements PdxLocaSource {
     @Override
     public boolean exists(String key) {
         return data.containsKey(key);
-    }
-
-    @Override
-    public void apply(PdxLocaSourceFilter filter) {
-        this.filter = filter;
     }
 
     public void validation() throws SystemException {
