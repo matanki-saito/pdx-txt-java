@@ -3,15 +3,13 @@ package com.github.matanki_saito.rico.loca;
 import com.github.matanki_saito.rico.exception.ArgumentException;
 import com.github.matanki_saito.rico.exception.SystemException;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public interface PdxLocaSource {
-    PdxLocaYamlRecord get(String key) throws ArgumentException, SystemException;
+    PdxLocaYamlRecord get(String key, PdxLocaFilter filter) throws ArgumentException, SystemException;
 
     List<String> getKeys(PdxLocaFilter filter) throws ArgumentException, SystemException;
 

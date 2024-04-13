@@ -20,7 +20,7 @@ public class PdxLocaYmlTool {
                                    PdxLocaFilter filter)
             throws ArgumentException, SystemException {
         try {
-            var record = source.get(key);
+            var record = source.get(key,filter);
 
             var object = new LocaAnalyzedObject(record.getBody());
 

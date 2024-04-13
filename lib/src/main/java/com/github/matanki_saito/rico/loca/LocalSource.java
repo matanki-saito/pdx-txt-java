@@ -81,7 +81,7 @@ public class LocalSource implements PdxLocaSource {
 
 
     @Override
-    public PdxLocaYamlRecord get(String key) throws ArgumentException, SystemException {
+    public PdxLocaYamlRecord get(String key, PdxLocaFilter filter) throws ArgumentException, SystemException {
         if (!data.containsKey(key)) {
             throw new ArgumentException("keyは存在しません");
         }
