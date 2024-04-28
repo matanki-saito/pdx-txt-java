@@ -32,7 +32,8 @@ DOT: '.';
 SPACE: ' '|' ';
 UNDERSCORE: '_';
 SECSIGN: '§';
-
+SECSIGNEND: '§W' | '§!';
+LIBRA: '£';
 
 NUMBER: [0-9];
 ALPHABET: [a-zA-ZÖ];
@@ -48,6 +49,7 @@ sections: section*;
 section
 :variable
 |icon
+|icon2
 |shell
 |tag
 |tooltippable_tag_1
@@ -106,7 +108,7 @@ scope: scope_d scope_second* ;
 shell_target: (scope|variable);
 shell: BRANKET_START SPACE* shell_target variable_format? SPACE* BRANKET_END;
 tagend: SHARP EXC;
-segment: SECSIGN ALPHABET sections SECSIGN EXC;
+segment: SECSIGN ALPHABET sections SECSIGNEND;
 tooltippable_tag_1: '#tooltippable;' id SEMICORON id CORON id SPACE sections tagend;
 tooltippable_tag_2: '#tooltippable;' id CORON id SPACE sections tagend;
 tooltip_target_tag: (id|variable|shell);
@@ -115,4 +117,5 @@ tooltip_tag_2: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE* COMMA SPACE* toolt
 tooltip_tag_3: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE* COMMA SPACE* tooltip_target_tag SPACE* COMMA SPACE* id SPACE sections tagend;
 tag: SHARP id (CORON NUMBER)? SPACE sections tagend;
 icon: ATT section;
+icon2: LIBRA ALPHABET* (LIBRA|SPACE);
 wtext: DASH sections DASH;

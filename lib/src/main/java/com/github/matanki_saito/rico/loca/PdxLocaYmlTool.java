@@ -27,6 +27,9 @@ public class PdxLocaYmlTool {
     private Map<String, Integer> icons = new HashMap<>();
 
     @Builder.Default
+    private Map<String, Integer> icon2s = new HashMap<>();
+
+    @Builder.Default
     private Map<String, Integer> segments = new HashMap<>();
 
     @Builder.Default
@@ -59,7 +62,7 @@ public class PdxLocaYmlTool {
                         .formatted(record.getKey(), object.getListener().getExceptions()), object.getListener().getExceptions());
             }
         } catch (ArgumentException e) {
-            return e.getMessage();
+            return key;
         }
 
     }
@@ -135,6 +138,17 @@ public class PdxLocaYmlTool {
             }
 
             return "⛩️";
+        }
+
+        // アイコン2：₤xxx₤
+        if (tree instanceof Vic3LocaParser.Icon2Context icon2) {
+            if (debug) {
+                var k = icon2.ALPHABET().stream().map(ParseTree::getText).collect(Collectors.joining());
+                icon2s.putIfAbsent(k, 0);
+                icon2s.computeIfPresent(k, (z, v) -> v + 1);
+            }
+
+            return "🐈️";
         }
 
         // argument
@@ -217,14 +231,7 @@ public class PdxLocaYmlTool {
                 }
             }
 
-            for (var pt : pattern.getPattern(filter.getIndecies()).entrySet()) {
-                var m = pt.getKey().matcher(x);
-                if (m.find()) {
-                    return pt.getValue();
-                }
-            }
-
-            return x;
+            return pattern.findScopePattern(filter.getIndecies(), x).orElse(x);
         }
 
         // 実行処理：[xxx]
@@ -241,23 +248,17 @@ public class PdxLocaYmlTool {
                 vars.computeIfPresent(id, (z, v) -> v + 1);
             }
 
-            if (source.exists(id, filter)) {
+            var m = pattern.findVariablePattern(filter.getIndecies(), id);
+            if(m.isPresent()){
+                return m.get();
+            } else if (source.exists(id, filter)) {
                 try {
                     return normalize(id, source, pattern, filter);
                 } catch (ArgumentException | SystemException e) {
                     throw new RuntimeException("予期せぬエラー", e);
                 }
             } else {
-                //tmp.add(id);
-                return switch (id) {
-                    case "VALUE" -> "+50";
-                    case "COSTS", "COST", "YEARS" -> "100";
-                    case "PRESET_NAME" -> "プリセット１";
-                    case "COURT_POSITION" -> "家令";
-                    case "EFFECT" -> "<<<<効果>>>>";
-                    case "RESOURCES", "MONTHS" -> "3";
-                    default -> id;
-                };
+                return id;
             }
         }
 

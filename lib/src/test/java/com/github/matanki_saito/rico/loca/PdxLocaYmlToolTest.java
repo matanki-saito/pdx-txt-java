@@ -2,7 +2,6 @@ package com.github.matanki_saito.rico.loca;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.file.Path;
@@ -38,20 +37,22 @@ class PdxLocaYmlToolTest {
     void extractIconTextOnEu4JpMod() throws Exception {
         var source = new LocalSource(Pair.of("eu4", eu4JpModLocaTarget));
         var filter = PdxLocaFilter.builder().indecies(List.of("eu4")).build();
-        var pattern = new PdxLocaMatchPattern();
+        var pattern = new PdxLocaMatchPattern(true);
         var tool = PdxLocaYmlTool.builder().debug(true).build();
         var result = tool.normalize(source, pattern, filter);
 
-//        tool.getIcons().entrySet().stream()
+//        tool.getScopes().entrySet().stream()
 //                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
 //                .toList()
-//                .forEach(item -> System.out.printf("%s:%d%n", item.getKey(), item.getValue()));
+//                .stream()
+//                .filter(item -> !pattern.matchPattern(List.of("eu4"), item.getKey().replace(".", "=")))
+//                .forEach(item -> System.out.printf("%s:%d%n",
+//                        item.getKey(),
+//                        item.getValue()));
 
-        tool.getScopes().entrySet().stream()
+        tool.getIcon2s().entrySet().stream()
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .toList()
-                .stream()
-                .filter(item -> !pattern.matchPattern(List.of("eu4"), item.getKey().replace(".", "=")))
                 .forEach(item -> System.out.printf("%s:%d%n",
                         item.getKey(),
                         item.getValue()));
@@ -62,10 +63,10 @@ class PdxLocaYmlToolTest {
     void extractIconTextOnEu4JpMod1() throws Exception {
         LocalSource source = new LocalSource(Pair.of("eu4", eu4JpModLocaTarget));
         var filter = PdxLocaFilter.builder().indecies(List.of("eu4")).build();
-        PdxLocaMatchPattern pattern = new PdxLocaMatchPattern(true);
+        PdxLocaMatchPattern pattern = new PdxLocaMatchPattern();
         var tool = PdxLocaYmlTool.builder().debug(true).build();
-        var result = tool.normalize("sell_indulgence_desc", source, pattern, filter);
-
+        var result = tool.normalize("CONFIRM_CENTRALIZE_STATE_TEXT", source, pattern, filter);
+        System.out.print(result);
         //tool.getIcons().forEach(key -> System.out.printf("%s%n", key));
         //tool.getSegments().forEach(key -> System.out.printf("%s%n", key));
         //tool.getVars().forEach(key -> System.out.printf("%s%n", key));
