@@ -31,6 +31,7 @@ SLASH: '/';
 DOT: '.';
 SPACE: ' '|' ';
 UNDERSCORE: '_';
+SECSIGN: '§';
 
 
 NUMBER: [0-9];
@@ -53,6 +54,7 @@ section
 |tooltip_tag_1
 |tooltip_tag_2
 |tooltip_tag_3
+|segment
 |text;
 
 text
@@ -102,6 +104,7 @@ scope: scope_d scope_second* ;
 shell_target: (scope|variable);
 shell: BRANKET_START SPACE* shell_target variable_format? SPACE* BRANKET_END;
 tagend: SHARP EXC;
+segment: SECSIGN ALPHABET sections SECSIGN EXC;
 tooltippable_tag_1: '#tooltippable;' id SEMICORON id CORON id SPACE sections tagend;
 tooltippable_tag_2: '#tooltippable;' id CORON id SPACE sections tagend;
 tooltip_target_tag: (id|variable|shell);
@@ -109,5 +112,5 @@ tooltip_tag_1: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE sections tagend;
 tooltip_tag_2: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE* COMMA SPACE* tooltip_target_tag SPACE sections tagend;
 tooltip_tag_3: '#tooltip:' (tooltip_target_tag PIPE?)+ SPACE* COMMA SPACE* tooltip_target_tag SPACE* COMMA SPACE* id SPACE sections tagend;
 tag: SHARP id (CORON NUMBER)? SPACE sections tagend;
-icon: ATT id EXC;
+icon: ATT section;
 wtext: DASH sections DASH;

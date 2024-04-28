@@ -4,23 +4,51 @@ import com.github.matanki_saito.rico.antlr.Vic3LocaParser;
 import com.github.matanki_saito.rico.exception.ArgumentException;
 import com.github.matanki_saito.rico.exception.PdxParseException;
 import com.github.matanki_saito.rico.exception.SystemException;
-import lombok.experimental.UtilityClass;
+import lombok.Builder;
+import lombok.Getter;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.StringEscapeUtils;
 
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
-@UtilityClass
+@Getter
+@Builder
 public class PdxLocaYmlTool {
-    public static String normalize(String key,
-                                   PdxLocaSource source,
-                                   PdxLocaMatchPattern pattern,
-                                   PdxLocaFilter filter)
+
+
+    @Builder.Default
+    private Boolean debug = false;
+
+    @Builder.Default
+    private Set<String> circularReferenceCheckSet = new HashSet<>();
+
+    @Builder.Default
+    private Map<String, Integer> icons = new HashMap<>();
+
+    @Builder.Default
+    private Map<String, Integer> segments = new HashMap<>();
+
+    @Builder.Default
+    private Map<String, Integer> vars = new HashMap<>();
+
+    @Builder.Default
+    private Map<String, Integer> scopes = new HashMap<>();
+
+    public String normalize(String key,
+                            PdxLocaSource source,
+                            PdxLocaMatchPattern pattern,
+                            PdxLocaFilter filter)
             throws ArgumentException, SystemException {
+
+        if (circularReferenceCheckSet.contains(key)) {
+            return "circular reference!!";
+        } else {
+            circularReferenceCheckSet.add(key);
+        }
+
         try {
-            var record = source.get(key,filter);
+            var record = source.get(key, filter);
 
             var object = new LocaAnalyzedObject(record.getBody());
 
@@ -36,11 +64,12 @@ public class PdxLocaYmlTool {
 
     }
 
-    public static Map<String, String> normalize(PdxLocaSource source, PdxLocaMatchPattern pattern, PdxLocaFilter filter)
+    public Map<String, String> normalize(PdxLocaSource source, PdxLocaMatchPattern pattern, PdxLocaFilter filter)
             throws ArgumentException, SystemException {
         return source.getKeys(filter).stream().collect(Collectors.toMap(key -> key,
                 key -> {
                     try {
+                        circularReferenceCheckSet = new HashSet<>();
                         return normalize(key, source, pattern, filter);
                     } catch (ArgumentException | SystemException e) {
                         return "";
@@ -48,7 +77,7 @@ public class PdxLocaYmlTool {
                 }));
     }
 
-    private static String sweep(ParseTree tree, PdxLocaSource source, PdxLocaMatchPattern pattern, PdxLocaFilter filter) {
+    private String sweep(ParseTree tree, PdxLocaSource source, PdxLocaMatchPattern pattern, PdxLocaFilter filter) {
         if (tree instanceof Vic3LocaParser.RootContext rootContext) {
             return sweep(rootContext.sections(), source, pattern, filter);
         }
@@ -86,8 +115,25 @@ public class PdxLocaYmlTool {
                     .collect(Collectors.joining());
         }
 
-        // アイコン：@xxx!
-        if (tree instanceof Vic3LocaParser.IconContext) {
+        // segment : §R ~~~~ §!
+        if (tree instanceof Vic3LocaParser.SegmentContext segmentContext) {
+            if (debug) {
+                var k = segmentContext.ALPHABET().getText();
+                segments.putIfAbsent(k, 0);
+                segments.computeIfPresent(k, (z, v) -> v + 1);
+            }
+
+            return sweep(segmentContext.sections(), source, pattern, filter);
+        }
+
+        // アイコン：@xxx
+        if (tree instanceof Vic3LocaParser.IconContext icon) {
+            if (debug) {
+                var k = icon.section().getText();
+                icons.putIfAbsent(k, 0);
+                icons.computeIfPresent(k, (z, v) -> v + 1);
+            }
+
             return "⛩️";
         }
 
@@ -144,6 +190,11 @@ public class PdxLocaYmlTool {
 
         // scopeオブジェクト
         if (tree instanceof Vic3LocaParser.ScopeContext scopeContext) {
+            if (debug) {
+                var k = scopeContext.getText();
+                scopes.putIfAbsent(k, 0);
+                scopes.computeIfPresent(k, (z, v) -> v + 1);
+            }
             var result = new ArrayList<String>();
             result.add(sweep(scopeContext.scope_d(), source, pattern, filter));
             if (scopeContext.scope_second() != null) {
@@ -152,15 +203,15 @@ public class PdxLocaYmlTool {
 
             var x = String.join("=", result);
             var keyX = "game_concept_" + x;
-            if (source.exists(keyX,filter)) {
+            if (source.exists(keyX, filter)) {
                 try {
-                    return normalize(keyX, source, pattern,filter);
+                    return normalize(keyX, source, pattern, filter);
                 } catch (ArgumentException | SystemException e) {
                     throw new RuntimeException("予期せぬエラー");
                 }
-            } else if (source.exists(x,filter)) {
+            } else if (source.exists(x, filter)) {
                 try {
-                    return normalize(x, source, pattern,filter);
+                    return normalize(x, source, pattern, filter);
                 } catch (ArgumentException | SystemException e) {
                     throw new RuntimeException("予期せぬエラー");
                 }
@@ -184,9 +235,15 @@ public class PdxLocaYmlTool {
         // 変数：$xxx$
         if (tree instanceof Vic3LocaParser.VariableContext variableContext) {
             var id = variableContext.id().getText();
-            if (source.exists(id,filter)) {
+
+            if (debug) {
+                vars.putIfAbsent(id, 0);
+                vars.computeIfPresent(id, (z, v) -> v + 1);
+            }
+
+            if (source.exists(id, filter)) {
                 try {
-                    return normalize(id, source, pattern,filter);
+                    return normalize(id, source, pattern, filter);
                 } catch (ArgumentException | SystemException e) {
                     throw new RuntimeException("予期せぬエラー", e);
                 }

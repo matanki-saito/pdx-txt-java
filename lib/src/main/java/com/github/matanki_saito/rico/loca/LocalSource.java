@@ -92,8 +92,8 @@ public class LocalSource implements PdxLocaSource {
     public List<String> getKeys(PdxLocaFilter filter) throws ArgumentException, SystemException {
         return data.values()
                 .stream()
-                .filter(x -> filter.getFileNames().contains(x.getFileName())
-                        && filter.getIndecies().contains(x.getIndexName()))
+                .filter(x -> (filter.getFileNames().isEmpty() || filter.getFileNames().contains(x.getFileName()))
+                        && (filter.getIndecies().isEmpty() || filter.getIndecies().contains(x.getIndexName())))
                 .map(PdxLocaYamlRecord::getKey)
                 .toList();
     }

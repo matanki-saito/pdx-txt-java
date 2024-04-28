@@ -34,8 +34,10 @@ public class PdxLocaMatchPattern {
 
     private Map<String, Map<Pattern, String>> pattern = new HashMap<>();
 
-    public PdxLocaMatchPattern() throws MachineException, ArgumentException {
-        reload();
+    public PdxLocaMatchPattern(boolean... debug) throws MachineException, ArgumentException {
+        if (debug.length == 0) {
+            reload();
+        }
     }
 
     public Map<Pattern, String> getPattern(List<String> indices) {
@@ -46,6 +48,11 @@ public class PdxLocaMatchPattern {
             }
         }
         return result;
+    }
+
+    public Boolean matchPattern(List<String> indices,String target){
+        var p = getPattern(indices);
+        return p.entrySet().stream().anyMatch(x->x.getKey().matcher(target).matches());
     }
 
     public PdxLocaMatchPattern(String spreadSheetId) throws MachineException, ArgumentException {

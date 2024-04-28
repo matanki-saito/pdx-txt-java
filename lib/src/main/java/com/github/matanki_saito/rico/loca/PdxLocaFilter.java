@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
@@ -12,6 +13,8 @@ import java.util.List;
 @Data
 @Builder(toBuilder = true)
 public class PdxLocaFilter {
-    private List<String> fileNames;
-    private List<String> indecies;
+    @Builder.Default
+    private List<String> fileNames = new ArrayList<>();
+    @Builder.Default
+    private List<String> indecies = new ArrayList<>();
 }
