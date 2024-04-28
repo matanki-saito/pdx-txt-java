@@ -39,6 +39,7 @@ ALPHABET: [a-zA-ZÖ];
 LATIN_SIGH:[•~><£];
 JAPANESE: [ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠（）、「」【】・。：；！？々～…×　＝ー―ｰ—－０-９]+;
 ZWSP: '​';
+FSP: ' ';
 
 root:sections EOF;
 
@@ -62,6 +63,7 @@ text
 | ALPHABET+
 | JAPANESE+
 | ZWSP
+| FSP
 | AND
 | DOLLER
 | BRANKET_START
