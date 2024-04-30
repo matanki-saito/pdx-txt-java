@@ -215,23 +215,14 @@ public class PdxLocaYmlTool {
                 result.addAll(scopeContext.scope_second().stream().map(x -> sweep(x.scope_d(), source, pattern, filter)).toList());
             }
 
-            var x = String.join("=", result);
-            var keyX = "game_concept_" + x;
-            if (source.exists(keyX, filter)) {
-                try {
-                    return normalize(keyX, source, pattern, filter);
-                } catch (ArgumentException | SystemException e) {
-                    throw new RuntimeException("予期せぬエラー");
-                }
-            } else if (source.exists(x, filter)) {
-                try {
-                    return normalize(x, source, pattern, filter);
-                } catch (ArgumentException | SystemException e) {
-                    throw new RuntimeException("予期せぬエラー");
-                }
-            }
+            var key = String.join("=", result);
+            key = pattern.findScopePattern(filter.getIndecies(), key).orElse(key);
 
-            return pattern.findScopePattern(filter.getIndecies(), x).orElse(x);
+            try {
+                return source.exists(key, filter) ? normalize(key, source, pattern, filter) : key;
+            } catch (ArgumentException | SystemException e) {
+                throw new RuntimeException("予期せぬエラー");
+            }
         }
 
         // 実行処理：[xxx]
@@ -249,7 +240,7 @@ public class PdxLocaYmlTool {
             }
 
             var m = pattern.findVariablePattern(filter.getIndecies(), id);
-            if(m.isPresent()){
+            if (m.isPresent()) {
                 return m.get();
             } else if (source.exists(id, filter)) {
                 try {

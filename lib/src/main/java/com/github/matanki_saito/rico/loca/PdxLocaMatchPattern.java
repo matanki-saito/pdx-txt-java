@@ -185,17 +185,18 @@ public class PdxLocaMatchPattern {
 
             String key = null, value = null;
             boolean isVariable = false;
-            if (!cell.isEmpty()) {
+
+            if (!cell.isEmpty() && cell.get(0).getUserEnteredValue() != null) {
                 String a = cell.get(0).getUserEnteredValue().getStringValue();
                 Double b = cell.get(0).getUserEnteredValue().getNumberValue();
                 key = a != null ? a : b.toString();
             }
-            if (cell.size() > 1) {
+            if (cell.size() > 1 && cell.get(1).getUserEnteredValue() != null) {
                 String c = cell.get(1).getUserEnteredValue().getStringValue();
                 Double d = cell.get(1).getUserEnteredValue().getNumberValue();
                 value = c != null ? c : d.toString();
             }
-            if (cell.size() > 2) {
+            if (cell.size() > 2 && cell.get(2).getUserEnteredValue() != null) {
                 String e = cell.get(2).getUserEnteredValue().getStringValue();
                 Double f = cell.get(2).getUserEnteredValue().getNumberValue();
                 isVariable = (e != null ? e : f.toString()).equals("variable");

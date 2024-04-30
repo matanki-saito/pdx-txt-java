@@ -2,6 +2,7 @@ package com.github.matanki_saito.rico.loca;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.file.Path;
@@ -12,65 +13,76 @@ import java.util.Map;
 
 @ExtendWith(SoftAssertionsExtension.class)
 class PdxLocaYmlToolTest {
-    private final Path ck3jomini = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Crusader Kings III\\jomini\\localization");
-    private final Path ck3Target = Paths.get("C:\\repo\\Ck3JpMod\\source\\localization\\english");
-
-    private final Path eu4JpModLocaTarget = Paths.get("C:\\repo\\EU4JPModAppendixI\\source\\localisation");
-
-    private final Path ck3JpMod = Paths.get("C:\\repo\\Ck3JpMod\\source\\localization");
-
-    private final Path vic3Target = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\localization\\japanese");
 
     //@Test
-    void normalizeFile() throws Exception {
-        var source = new LocalSource(Pair.of("ck3", ck3jomini), Pair.of("ck3", ck3JpMod));
-        var pattern = new PdxLocaMatchPattern();
-        var filter = PdxLocaFilter.builder()
-                .fileNames(List.of("core_l_english.yml")).indecies(List.of("ck3")).build();
+    void eu4JpMod() throws Exception {
+        var index = "eu4";
+        Path eu4JpMod = Paths.get("C:\\repo\\EU4JPModAppendixI\\source\\localisation");
 
-        var result = PdxLocaYmlTool.builder().build().normalize(source, pattern, filter);
+        var source = new LocalSource(Pair.of(index, eu4JpMod));
+        var filter = PdxLocaFilter.builder().indecies(List.of(index)).fileNames(List.of("dharma_l_english.yml")).build();
 
-        result.forEach((key, value) -> System.out.printf("KEY=%s,\nVALUE=%s%n", key, value));
+        internal(index, source, filter);
     }
 
     //@Test
-    void extractIconTextOnEu4JpMod() throws Exception {
-        var source = new LocalSource(Pair.of("eu4", eu4JpModLocaTarget));
-        var filter = PdxLocaFilter.builder().indecies(List.of("eu4")).build();
-        var pattern = new PdxLocaMatchPattern(true);
+    void ck3JpMod() throws Exception {
+        var index = "ck3";
+        Path ck3JpMod = Paths.get("C:\\repo\\Ck3JpMod\\source\\localization");
+        Path ck3jomini = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Crusader Kings III\\jomini\\localization");
+        Path ck3English = Paths.get("C:\\repo\\Ck3JpMod\\source\\localization\\english");
+
+        var source = new LocalSource(Pair.of(index, ck3jomini), Pair.of(index, ck3JpMod));
+        var filter = PdxLocaFilter.builder().indecies(List.of(index)).fileNames(List.of("court_positions_l_english.yml")).build();
+
+        internal(index, source, filter);
+    }
+
+    //@Test
+    void vic3JpMod() throws Exception {
+        var index = "vic3";
+        Path common = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\localization\\jomini\\script_system");
+        Path vic3jomini = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\jomini\\localization");
+        Path vic3Japanese = Paths.get("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\localization\\japanese");
+
+        var source = new LocalSource(Pair.of(index, common), Pair.of(index, vic3jomini), Pair.of(index, vic3Japanese));
+        var filter = PdxLocaFilter.builder().indecies(List.of(index)).fileNames(List.of("content_101_l_japanese.yml")).build();
+
+        internal(index, source, filter);
+    }
+
+
+    private void internal(String index, LocalSource source, PdxLocaFilter filter) throws Exception {
+
+        var pattern = new PdxLocaMatchPattern();
         var tool = PdxLocaYmlTool.builder().debug(true).build();
         var result = tool.normalize(source, pattern, filter);
 
-//        tool.getScopes().entrySet().stream()
-//                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-//                .toList()
-//                .stream()
-//                .filter(item -> !pattern.matchPattern(List.of("eu4"), item.getKey().replace(".", "=")))
-//                .forEach(item -> System.out.printf("%s:%d%n",
-//                        item.getKey(),
-//                        item.getValue()));
+        result.forEach((key, value) -> {
+            System.out.printf("<%s>%n", key);
+            System.out.println(value);
+            System.out.println("------");
+        });
 
-        tool.getIcon2s().entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .toList()
-                .forEach(item -> System.out.printf("%s:%d%n",
-                        item.getKey(),
-                        item.getValue()));
-
-    }
-
-    //@Test
-    void extractIconTextOnEu4JpMod1() throws Exception {
-        LocalSource source = new LocalSource(Pair.of("eu4", eu4JpModLocaTarget));
-        var filter = PdxLocaFilter.builder().indecies(List.of("eu4")).build();
-        PdxLocaMatchPattern pattern = new PdxLocaMatchPattern();
-        var tool = PdxLocaYmlTool.builder().debug(true).build();
-        var result = tool.normalize("CONFIRM_CENTRALIZE_STATE_TEXT", source, pattern, filter);
-        System.out.print(result);
-        //tool.getIcons().forEach(key -> System.out.printf("%s%n", key));
-        //tool.getSegments().forEach(key -> System.out.printf("%s%n", key));
-        //tool.getVars().forEach(key -> System.out.printf("%s%n", key));
-
+        List.of(Pair.of("variable", tool.getVars()),
+                Pair.of("scope", tool.getScopes()),
+                Pair.of("segment", tool.getSegments())
+        ).forEach(x -> {
+            System.out.printf("<%s>%n", x.getLeft());
+            x.getRight().entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                    .toList()
+                    .stream()
+                    .filter(item -> switch (x.getLeft()) {
+                        case "variable" ->
+                                !pattern.matchVariablePattern(List.of(index), item.getKey().replace(".", "="));
+                        case "scope" -> !pattern.matchScopePattern(List.of(index), item.getKey().replace(".", "="));
+                        default -> true;
+                    })
+                    .forEach(item -> System.out.printf("%s:%d%n",
+                            item.getKey(),
+                            item.getValue()));
+        });
     }
 
 }
